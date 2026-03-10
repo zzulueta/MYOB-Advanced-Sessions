@@ -9,25 +9,23 @@ lab:
 ## Lab Introduction
 
 In this lab you build a governance foundation in Azure and then deploy infrastructure
-using both ARM templates and Bicep. You will work through the full delivery chain:
-organise subscriptions into management groups, enforce standards with Azure Policy and
-resource locks, author and deploy ARM templates, convert them to Bicep, and validate
-deployments using what-if before applying changes.
+using both ARM templates and Bicep. You will work through the following tasks:
+- Configure RBAC with least-privilege role assignment
+- Enforce standards with Azure Policy, tags, and resource locks
+- Author and deploy ARM templates
+- Convert ARM templates to Bicep
+- Validate deployments using what-if before applying changes
 
-This lab requires an Azure subscription and Owner or Contributor rights at the
-subscription level. Steps are written using **Australia East** as the region but you
-may change this to suit your environment.
+This lab requires an Azure subscription and Owner rights at the resource group level. 
 
 ## Estimated Timing: 75 minutes
 
 ## Lab Scenario
 
-Your organisation is formalising its Azure landing zone ahead of a production
-workload migration. Before any infrastructure can be deployed, governance guardrails
-must be in place. You have been tasked with:
+Your organisation is formalising its Azure landing zone ahead of a production workload migration. Before any infrastructure can be deployed, governance guardrails must be in place. You have been tasked with:
 
-- Creating a management group hierarchy to organise subscriptions by environment
-- Enforcing a mandatory `Environment` tag using Azure Policy
+- Providing users with a Virtual Machine Contributor role to allow self-service provisioning of compute resources
+- Enforcing mandatory `Environment`, `CostCenter`, and `Department` tags using Azure Policy
 - Protecting shared resources against accidental deletion using resource locks
 - Deploying a baseline storage account using an ARM template and a Bicep file via
   Cloud Shell, using separate parameter files for dev and prod
@@ -37,7 +35,7 @@ must be in place. You have been tasked with:
 
 ```
 Tenant Root Group
-└── mg-myob-prod (Management Group)
+└── Root Management Group
     └── [Your Subscription]
         ├── rg-governance-lab (Resource Group)
         │   ├── Azure Policy Assignment (Require Environment tag)
@@ -47,235 +45,159 @@ Tenant Root Group
 
 ## Job Skills
 
-- Task 1: Create a management group and review subscription scope
-- Task 2: Configure RBAC with least-privilege role assignment
-- Task 3: Enforce governance with Azure Policy and resource tags
-- Task 4: Protect resources with a resource lock
-- Task 5: Export and understand an ARM template
-- Task 6: Deploy ARM and Bicep templates via Cloud Shell
-- Task 7: Apply deployment best practices — parameters, what-if, and history
+- Task 1: Configure RBAC with least-privilege role assignment
+- Task 2: Enforce governance with Azure Policy and resource tags
+- Task 3: Protect resources with a resource lock
+- Task 4: Export and understand an ARM template
+- Task 5: Deploy ARM and Bicep templates via Cloud Shell
+- Task 6: Apply deployment best practices — parameters, what-if, and history
 
 ---
 
-## Task 1: Create a Management Group and Review Subscription Scope (0:00 – 0:10)
+## Task 1: Configure RBAC with Least-Privilege Role Assignment (0:10 – 0:20)
 
-Management groups let you organise subscriptions and apply policy and RBAC at scale.
-In this task you create a management group representing your production environment
-boundary, then associate your subscription with it.
+Azure RBAC controls who can do what at which scope. In this task you assign a built-in role to an individual at the resource group scope.
 
-1. Sign in to the **Azure portal** – `https://portal.azure.com`.
+1. Navigate to Resource Group assigned to you (example rg-governance-<yourname>) and select **Access control (IAM)**.
 
-1. Search for and select **Management groups**.
+2. Select the **Check access** tab and click **View my access** to see your current permissions on the resource group.
 
-1. Select **+ Create**.
+3. Select **Check access** button and in the **Check access** dialog search for any of your colleagues' user account. Notice that they have no access to the resource group.
 
-1. Provide the following values and select **Submit**:
+4. Select the **Roles** tab and browse the list. Locate the **Virtual Machine Contributor** role and select **View under Details** to review the permissions it grants.
 
-   | Setting | Value |
-   | --- | --- |
-   | Management group ID | `mg-myob-prod` |
-   | Management group display name | `mg-myob-prod` |
+5. Visit Microsoft Learn: https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles and find the **Virtual Machine Contributor** role. Review the list of permissions it grants.
 
-1. **Refresh** the page and confirm the management group appears under the
-   **Tenant Root Group**.
+6. Return to the portal and select **+ Add** → **Add role assignment**.
 
-   > **Why this matters:** Every subscription that belongs to `mg-myob-prod` will
-   > inherit any Azure Policy assignments and RBAC role assignments made at this
-   > level. This is how guardrails are applied consistently across multiple
-   > subscriptions without repeating configuration.
+7. Search for and select **Virtual Machine Contributor**. Select **Next**.
 
-1. Select **mg-myob-prod** and then select **Subscriptions**.
+8. On the **Members** tab, select **+ Select members**. Search for your colleague's user account. Select **Select**.
 
-1. Select **+ Add** and add your current subscription to the management group.
-   Select **Save**.
+9. Select **Review + assign** twice.
 
-   > **Environment separation pattern:** In a production landing zone you would
-   > create separate management groups per environment tier (e.g. `mg-myob-dev`,
-   > `mg-myob-test`, `mg-myob-prod`), each containing the relevant subscriptions.
-   > This allows different policies to apply to dev vs prod without manual
-   > per-subscription configuration. Within a single subscription, resource groups
-   > can separate environments, but subscription-level separation provides stronger
-   > isolation for billing, blast radius, and policy inheritance.
+10. Go to the **Role assignments** tab. Confirm the recent assignment appears on the **Role assignments** tab.
+
+Best practices for RBAC:
+- Assign roles to groups, not individuals — this simplifies management and ensures access is automatically updated as users join or leave groups.
+- Use the narrowest scope that satisfies the requirement — assign at the resource group level instead of subscription if access is only needed for that resource group.
+- Use built-in roles where possible, but create custom roles to remove permissions that built-in roles include but your scenario does not require (e.g. if Virtual Machine Contributor includes permissions you do not want to grant, create a custom role that excludes those permissions).
 
 ---
 
-## Task 2: Configure RBAC with Least-Privilege Role Assignment (0:10 – 0:20)
+## Task 2: Enforce Governance with Azure Policy and Resource Tags (0:20 – 0:35)
 
-Azure RBAC controls who can do what at which scope. In this task you assign a
-built-in role to a group at the management group scope, then create the resource
-group that later tasks will use.
-
-### Create the resource group
-
-1. Search for and select **Resource groups**.
-
-1. Select **+ Create** and provide the following:
-
-   | Setting | Value |
-   | --- | --- |
-   | Subscription | *your subscription* |
-   | Resource group name | `rg-governance-lab` |
-   | Region | **Australia East** |
-
-1. Select the **Tags** tab. Add a tag:
-
-   | Name | Value |
-   | --- | --- |
-   | Environment | dev |
-
-1. Select **Review + Create**, then **Create**.
-
-### Review and assign a built-in role
-
-1. Navigate to **mg-myob-prod** and select **Access control (IAM)**.
-
-1. Select the **Roles** tab and browse the list. Locate and open the
-   **Contributor** role. Review the **Permissions** and **JSON** tabs.
-
-   > **Note:** The `Actions`, `NotActions`, and `AssignableScopes` fields in the
-   > JSON define exactly what the role can and cannot do. This is the same format
-   > you edit when creating a custom role.
-
-1. Select **+ Add** → **Add role assignment**.
-
-1. Search for and select **Reader**. Select **Next**.
-
-1. On the **Members** tab, select **+ Select members**. Search for your own
-   account or a test user/group. Select **Select**.
-
-1. Select **Review + assign** twice.
-
-   > **Best practice:** Always assign roles to groups, not individual users.
-   > Assigning at management group scope means the role applies to all
-   > subscriptions beneath it — use the narrowest scope that satisfies the
-   > requirement.
-
-1. Confirm the assignment appears on the **Role assignments** tab.
-
----
-
-## Task 3: Enforce Governance with Azure Policy and Resource Tags (0:20 – 0:35)
-
-Azure Policy lets you enforce standards automatically. In this task you assign a
-built-in policy that requires an `Environment` tag on all resources, then test that
-it blocks non-compliant deployments.
-
-### Assign the policy
+Azure Policy lets you enforce standards automatically. In this task you assign a built-in policy that requires tag on all resources, then test that it blocks non-compliant deployments.
 
 1. In the Azure portal, search for and select **Policy**.
 
-1. In the **Authoring** blade, select **Definitions**.
+2. In the **Authoring** blade, select **Definitions**.
 
-1. Search for `Require a tag and its value on resources`. Select the policy and
-   review its definition — note the `deny` effect, which blocks non-compliant
-   resources at deployment time.
+3. Search for `Require a tag on resources`. Select the policy and review its definition — note the `deny` effect, which blocks non-compliant resources at deployment time.
 
-1. Select **Assign policy**.
+4. Select **Assign policy**.
 
-1. Set the **Scope** by selecting the ellipsis (…):
+5. Set the **Scope** by selecting the ellipsis (…):
 
    | Setting | Value |
    | --- | --- |
-   | Subscription | *your subscription* |
-   | Resource Group | **rg-governance-lab** |
+   | Resource Group | **rg-governance-<yourname>** |
 
    Select **Select**.
 
-1. Configure **Basics**:
-
-   | Setting | Value |
-   | --- | --- |
-   | Assignment name | `Require Environment tag on all resources` |
-   | Description | `Blocks deployment of resources missing the Environment tag` |
-   | Policy enforcement | **Enabled** |
-
-1. Select **Next** and set **Parameters**:
+6. Select **Next** and set **Parameters**:
 
    | Setting | Value |
    | --- | --- |
    | Tag Name | `Environment` |
-   | Tag Value | `dev` |
 
-1. Select **Review + Create**, then **Create**.
+7. On the **Non-compliance messages** tab, enter "Require Environment Tag on Resource".
 
-   > **Note:** Policy enforcement typically takes 5–10 minutes to activate.
+8. Select **Review + Create**, then **Create**.
+
+9. Repeat the **Assign policy** steps (Steps 4-8) two more times to enforce additional required tags:
+
+   **Second assignment – Cost Center:**
+   | Setting | Value |
+   | --- | --- |
+   | Tag Name | `CostCenter` |
+   | Non-compliance message | `Require CostCenter Tag on Resource` |
+
+   **Third assignment – Department:**
+   | Setting | Value |
+   | --- | --- |
+   | Tag Name | `Department` |
+   | Non-compliance message | `Require Department Tag on Resource` |
+   
+**Note:** 
+- The built-in policy `Require a tag on resources` enforces one tag per assignment. Assigning it once per required tag is the standard approach. Alternatively, use a Policy Initiative (policy set) to group all tag requirements into a single assignment.
+- Policy enforcement typically takes 5–10 minutes to activate.
 
 ### Test the policy enforcement
 
 1. Search for and select **Storage accounts**. Select **+ Create**.
 
-1. On the **Basics** tab:
+2. On the **Basics** tab:
 
    | Setting | Value |
    | --- | --- |
-   | Resource group | **rg-governance-lab** |
-   | Storage account name | `stlabpolicytest001` |
+   | Resource group | **rg-governance-<yourname>** |
+   | Storage account name | `stlab<yourname>` |
    | Region | **Australia East** |
+   | Preferred storage type | **Azure Blob Storage or Azure Data Lake Storage Gen 2** |
    | Redundancy | **LRS** |
 
-1. **Do not add any tags.** Select **Review**, then **Create**.
+3. **Do not add any tags.** Select **Review + Create**.
 
-1. You should receive a **Validation failed** error. Select the error to view
-   details — confirm it references your policy assignment
-   `Require Environment tag on all resources`.
+4. You should receive a **Validation failed** error. Select the Tags tab and confirm the error messages reference the missing tags.
 
-   > **What just happened:** The ARM control plane evaluated the deployment
-   > request against all assigned policies before provisioning any resource.
-   > The `deny` effect caused the deployment to be rejected before anything was
-   > created.
+**What just happened:** The ARM control plane evaluated the deployment request against all assigned policies before provisioning any resource. The `deny` effect caused the deployment to be rejected before anything was created.
 
-1. Return to **Basics**, then select the **Tags** tab and add:
+5. In the **Tags** tab add all three required tags:
 
    | Name | Value |
    | --- | --- |
-   | Environment | dev |
+   | Environment | `dev` |
+   | CostCenter | `CC1234` |
+   | Department | `IT` |
 
-1. Select **Review**, then **Create**. This time validation passes.
+6. Select **Review + Create**. This time validation passes.
 
-1. Wait for the deployment to succeed, then select **Go to resource**.
+7. Select Create and Wait for the deployment to succeed.
 
-   > **Optional – remediation:** In production you would also assign the
-   > `Inherit a tag from the resource group if missing` policy with a remediation
-   > task so existing non-compliant resources are automatically updated. This
-   > mirrors the approach in LAB_02b.
+8. Go to the Resource Group, expand the Settings blade and select **Policies**. You can see the compliance state of the Resource Group.
 
 ---
 
-## Task 4: Protect Resources with a Resource Lock (0:35 – 0:40)
+## Task 3: Protect Resources with a Resource Lock (0:35 – 0:40)
 
-Resource locks prevent accidental deletion or modification, independent of RBAC
-permissions. An Owner can be blocked from deleting a resource if a lock is present.
+Resource locks prevent accidental deletion or modification, independent of RBAC permissions. An Owner can be blocked from deleting a resource if a lock is present.
 
-1. Navigate to **rg-governance-lab**.
+1. Navigate to **rg-governance-<yourname>**.
 
-1. In the **Settings** blade, select **Locks**.
+2. In the **Settings** blade, select **Locks**.
 
-1. Select **+ Add** and configure:
+3. Select **+ Add** and configure:
 
    | Setting | Value |
    | --- | --- |
-   | Lock name | `rg-governance-lab-nodelete` |
+   | Lock name | `resourcegroup-nodelete` |
    | Lock type | **Delete** |
    | Notes | `Protects lab resource group from accidental deletion` |
 
-1. Select **OK**.
+4. Select **OK**.
 
-1. Return to the **Overview** blade. Select **Delete resource group**.
+5. Return to the **Overview** blade. Select **Delete resource group**.
 
-1. Enter `rg-governance-lab` in the confirmation field and select **Delete**.
+6. Copy your resource group name and paste it in the confirmation field and select **Delete**.
 
-1. You should receive a deletion failure notification. Confirm the error
-   references the lock.
+7. You should receive a deletion failure notification. Confirm the error references the lock.
 
-   > **Key point:** Resource locks operate at the Azure control plane layer and
-   > apply regardless of user permissions. A delete lock prevents removal;
-   > a read-only lock prevents both modifications and deletions. Locks must be
-   > explicitly removed before a resource can be deleted — this adds a deliberate
-   > friction step.
+**Key point:** Resource locks operate at the Azure control plane layer and apply regardless of user permissions. A delete lock prevents removal; a read-only lock prevents both modifications and deletions. Locks must be explicitly removed before a resource can be deleted — this adds a deliberate friction step.
 
 ---
 
-## Task 5: Export and Understand an ARM Template (0:40 – 0:50)
+## Task 4: Export and Understand an ARM Template (0:40 – 0:50)
 
 Before writing templates, it helps to read one. In this task you export the ARM
 template for the storage account already deployed, examine its structure, and
@@ -283,11 +205,11 @@ edit it to understand parameterisation.
 
 ### Export the template
 
-1. Navigate to the storage account created in Task 3 (`stlabpolicytest001`).
+1. Navigate to the storage account created in Task 3.
 
-1. In the left blade, under **Automation**, select **Export template**.
+2. In the left blade, under **Automation**, select **Export template**.
 
-1. Take 2 minutes to examine the two files:
+3. Take 2 minutes to examine the two files:
 
    **Template file** (`template.json`) — notice these sections:
    - `$schema` — declares the deployment schema and API version
@@ -295,59 +217,46 @@ edit it to understand parameterisation.
    - `parameters` — values injected at deployment time (no hardcoding)
    - `variables` — computed values derived from parameters
    - `resources` — the actual Azure resources to create or update
-   - `outputs` — values returned after deployment (e.g. resource IDs, endpoints)
+
 
    **Parameters file** (`parameters.json`) — a separate file that supplies values
    for each parameter, allowing the same template to be re-used across environments
    by swapping the parameter file.
 
-1. Select **Download** to save both files locally.
+4. Select **Download** for the Template and Parameters files.
 
-   > **Why separate parameters?** A template describes *what* to deploy.
-   > A parameters file describes *how* to deploy it for a specific environment.
-   > Storing `parameters.dev.json` and `parameters.prod.json` in source control
-   > alongside your template means environment differences are explicit, auditable,
-   > and reproducible.
+**Why separate parameters?** A template describes *what* to deploy. A parameters file describes *how* to deploy it for a specific environment. Storing `parameters.dev.json` and `parameters.prod.json` in source control alongside your template means environment differences are explicit, auditable, and reproducible.
 
 ### Edit the template for reuse
 
 1. Open `template.json` in a text editor.
 
-1. In the `parameters` section, find the storage account name parameter.
-   Change its default value to `stlabdeploy001`.
+2. In the `parameters` section, find the storage account name parameter.
+   Change its default value to `stlabdeploy<yourname>`.
 
-1. Save the file.
+3. Save the file.
 
 ---
 
-## Task 6: Deploy ARM and Bicep Templates via Cloud Shell (0:50 – 1:10)
+## Task 5: Deploy ARM and Bicep Templates via Cloud Shell (0:50 – 1:10)
 
-In this task you use Azure Cloud Shell to deploy the storage account using both the
-ARM template and a Bicep equivalent. You will also verify idempotency by re-running
-a deployment with no changes.
+In this task you use Azure Cloud Shell to deploy the storage account using both the ARM template and a Bicep equivalent. You will also verify idempotency by re-running a deployment with no changes.
 
 ### Open Cloud Shell
 
 1. Select the **Cloud Shell** icon in the top-right of the Azure portal
-   (or navigate to `https://shell.azure.com`).
+   
+2. When prompted, select **Bash**.
 
-1. When prompted, select **Bash**.
+3. On the **Getting started** screen, select **No storage acccount required**, and select **Apply**. It may take a minute for the shell to provision.
 
-1. On the **Getting started** screen, select **Mount storage account**, select
-   your subscription, and select **Apply**.
-
-1. Select **I want to create a storage account**, complete the form, and
-   select **Next**, then **Create**.
-
-   > It may take a minute for the shell to provision.
-
-1. Verify your CLI version:
+4. Verify your CLI version:
 
    ```bash
    az --version
    ```
 
-1. Confirm you are using the correct subscription:
+5. Confirm you are using the correct subscription:
 
    ```bash
    az account show --query "{name:name, id:id}" -o table
@@ -361,12 +270,11 @@ a deployment with no changes.
 
 ### Upload your template and parameter files
 
-1. Select the **Manage files** (upload/download) icon in the Cloud Shell toolbar
-   and select **Upload**.
+1. Select the **Manage files** icon in the Cloud Shell toolbar and select **Upload**.
 
-1. Upload both `template.json` and `parameters.json` downloaded in Task 5.
+2. Select both `template.json` and `parameters.json` downloaded in previous task and click Open.
 
-1. Confirm they are present:
+3. Confirm they are present:
 
    ```bash
    ls
@@ -374,91 +282,86 @@ a deployment with no changes.
 
 ### Deploy using the ARM template
 
+1. Run the deployment command below:
 ```bash
 az deployment group create \
-  --resource-group rg-governance-lab \
+  --resource-group rg-governance-<yourname> \
   --template-file template.json \
   --parameters parameters.json \
-  --parameters storageAccountName=stlabarm001
+  --parameters storageAccounts_stlabtestuser1_name=stlabdeploy<yourname>
 ```
 
-1. Wait for the output to show `"provisioningState": "Succeeded"`.
+2. Wait for the output to show `"provisioningState": "Succeeded"`.
 
-1. List the storage accounts in the resource group to confirm:
+3. List the storage accounts in the resource group to confirm:
 
-   ```bash
+```bash
    az storage account list \
-     --resource-group rg-governance-lab \
+     --resource-group rg-governance-<yourname> \
      --query "[].{Name:name, Location:location, Sku:sku.name}" \
      -o table
-   ```
+```
 
 ### Verify idempotency
 
 1. Run the exact same deployment command again:
 
-   ```bash
-   az deployment group create \
-     --resource-group rg-governance-lab \
-     --template-file template.json \
-     --parameters parameters.json \
-     --parameters storageAccountName=stlabarm001
-   ```
+```bash
+az deployment group create \
+  --resource-group rg-governance-<yourname> \
+  --template-file template.json \
+  --parameters parameters.json \
+  --parameters storageAccounts_stlabtestuser1_name=stlabdeploy<yourname>
+```
 
-1. Confirm the output again shows `"provisioningState": "Succeeded"` with no
+2. Confirm the output again shows `"provisioningState": "Succeeded"` with no
    errors and no new resource created.
 
-   > **Idempotency** means running the same deployment twice produces the same
-   > end state without duplicating or erroring on existing resources. This is a
-   > core IaC principle — your deployments should be safe to re-run at any time.
+**Idempotency** means running the same deployment twice produces the same end state without duplicating or erroring on existing resources. This is a core IaC principle — your deployments should be safe to re-run at any time.
+
+3. Go the Azure Portal and visit the Resource Group. Confirm that there are two storage accounts present.
 
 ### Convert the ARM template to Bicep
 
 1. In Cloud Shell, run:
 
-   ```bash
+```bash
    az bicep decompile --file template.json
-   ```
+```
 
-1. Open the generated `.bicep` file in the Cloud Shell editor:
+2. Open the generated `.bicep` file in the Cloud Shell editor:
 
-   ```bash
+```bash
    code template.bicep
-   ```
+```
 
-1. Compare the Bicep syntax to the ARM JSON. Notice:
+3. Compare the Bicep syntax to the ARM JSON. Notice:
    - No `$schema` or `contentVersion` boilerplate
    - Parameters declared with `param` keyword and types (`string`, `int`, `bool`)
    - Resources use a clean `resource` block with symbolic names
-   - String interpolation uses `'${paramName}'` syntax instead of `[parameters('paramName')]`
 
-1. Change the storage account name in the Bicep file to `stlabbicep001`.
+4. Change the storage account name in the Bicep file to `stlabbicep<yourname>`.
    Use **Ctrl+S** to save, **Ctrl+Q** to close the editor.
 
 ### Deploy using the Bicep file
 
+1. Run the deployment this time referencing the bicep file.
 ```bash
 az deployment group create \
-  --resource-group rg-governance-lab \
+  --resource-group rg-governance-<yourname> \
   --template-file template.bicep
 ```
 
-1. Confirm `"provisioningState": "Succeeded"`.
+2. Confirm `"provisioningState": "Succeeded"`.
 
-1. List storage accounts again to confirm both `stlabarm001` and `stlabbicep001`
-   exist:
+3. List storage accounts again to confirm that 3 storage accounts exist:
 
-   ```bash
+```bash
    az storage account list \
-     --resource-group rg-governance-lab \
+     --resource-group rg-governance-<yourname> \
      --query "[].{Name:name}" \
      -o table
-   ```
-
-   > **ARM vs Bicep:** ARM JSON is the wire format — all Bicep files transpile to
-   > ARM JSON before being sent to Azure Resource Manager. Bicep is the
-   > recommended authoring experience for new templates. Use ARM JSON when
-   > integrating with tooling that does not yet support Bicep.
+```
 
 ---
 
@@ -469,25 +372,30 @@ az deployment group create \
 The `--what-if` flag shows exactly what a deployment *would* change without making
 any changes. Use this before every production deployment.
 
-1. In Cloud Shell, edit `template.bicep` and change the storage account name to
-   `stlabwhatif001` (or change the SKU from `Standard_LRS` to `Standard_GRS`).
-   Save and close.
+1. In Cloud Shell, edit `template.bicep` 
+```bash
+   code template.bicep
+```
 
-1. Run a what-if check:
+2. change the storage account name to `stlabwhatif<yourname>` 
+param storageAccounts_stlabtestuser1_name string = 'stlabwhatif<yourname>'
+Save and close.
 
-   ```bash
+3. Run a what-if check:
+
+```bash
    az deployment group what-if \
      --resource-group rg-governance-lab \
      --template-file template.bicep
-   ```
+```
 
-1. Review the output. Notice the colour-coded change indicators:
+4. Review the output. Notice the colour-coded change indicators:
    - **Create** (green `+`) — new resource will be added
    - **Modify** (yellow `~`) — existing resource will be changed
    - **Delete** (red `-`) — resource will be removed
    - **No change** (grey `=`) — resource is already in the desired state
 
-1. Only proceed with `az deployment group create` once you are satisfied with
+5. Only proceed with `az deployment group create` once you are satisfied with
    the what-if output.
 
 ### Environment-specific parameter files
@@ -495,119 +403,81 @@ any changes. Use this before every production deployment.
 In practice, do not rely only on inline `--parameters` overrides. Create separate
 parameter files per environment:
 
-1. In Cloud Shell, create a dev parameter file:
+1. In a text editor create the following files. Make sure to replace `<yourname>` with your unique identifier to avoid naming conflicts.
 
-   ```bash
-   cat > parameters.dev.json << 'EOF'
+- parameters.dev.json
    {
      "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
      "contentVersion": "1.0.0.0",
      "parameters": {
-       "storageAccountName": {
-         "value": "stlabdev001"
-       },
-       "location": {
-         "value": "australiaeast"
+       "storageAccounts_stlabtestuser1_name": {
+         "value": "stlabdev<yourname>"
        }
      }
    }
-   EOF
-   ```
-
-1. Create a prod parameter file:
-
-   ```bash
-   cat > parameters.prod.json << 'EOF'
+ 
+ - parameters.prod.json
    {
      "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
      "contentVersion": "1.0.0.0",
      "parameters": {
-       "storageAccountName": {
-         "value": "stlabprod001"
-       },
-       "location": {
-         "value": "australiaeast"
+       "storageAccounts_stlabtestuser1_name": {
+         "value": "stlabprod<yourname>"
        }
      }
    }
-   EOF
-   ```
 
-1. Deploy using the dev parameter file:
+2. Upload them in the Cloud Shell using the **Manage files** pane.
 
-   ```bash
+3. Deploy using the dev parameter file:
+
+```bash
    az deployment group create \
-     --resource-group rg-governance-lab \
+     --resource-group rg-governance-<yourname> \
      --template-file template.bicep \
      --parameters @parameters.dev.json
-   ```
-
-   > By committing `template.bicep`, `parameters.dev.json`, and
-   > `parameters.prod.json` to a Git repository, you get a full audit trail of
-   > who changed what and when. CI/CD pipelines (Azure DevOps or GitHub Actions)
-   > then run `az deployment group what-if` on pull requests and
-   > `az deployment group create` on merge — no manual portal deployments.
+```
 
 ### Review deployment history
 
-1. In the Azure portal, navigate to **rg-governance-lab**.
+1. In the Azure portal, navigate to **rg-governance-<yourname>**.
 
-1. In the **Settings** blade, select **Deployments**.
+2. In the **Settings** blade, select **Deployments**.
 
-1. Review the list of all deployments made during this lab — each entry records
+3. Review the list of all deployments made during this lab — each entry records
    the template, all parameter values, start time, duration, and outcome.
 
-1. Select one deployment and open the **Template** blade. Confirm the exact
+4. Select one deployment and open the **Template** blade. Confirm the exact
    template used is preserved for audit purposes.
 
-   > **Common pitfalls to avoid:**
-   > - Hardcoded resource names in templates (use parameters instead)
-   > - Missing resource locks on shared/production resources
-   > - Deploying directly from portal without template — creates unmanaged drift
-   > - Not using what-if before production deployments
-   > - Storing parameter files with secrets in source control (use Key Vault
-   >   references in parameter files instead)
+**Common pitfalls to avoid:**
+- Hardcoded resource names in templates (use parameters instead)
+- Missing resource locks on shared/production resources
+- Deploying directly from portal without template — creates unmanaged drift
+- Not using what-if before production deployments
 
 ---
 
 ## Cleanup
 
-If you are using your own subscription, remove lab resources to avoid ongoing costs.
+**Note:** Remove the resource lock before deleting the resource group, otherwise the deletion will be blocked.
 
-> **Note:** Remove the resource lock before deleting the resource group,
-> otherwise the deletion will be blocked.
+1. Go to your Resource Group.
 
-1. Remove the lock first:
+2. In the Settings -> Locks. **Delete the lock**.
 
-   ```bash
-   az lock delete \
-     --name rg-governance-lab-nodelete \
-     --resource-group rg-governance-lab
-   ```
+3. In the Overview, select **Delete resource group**.
 
-1. Delete the resource group:
+4. Copy and paste the name to confirm deletion.
 
-   ```bash
-   az group delete --name rg-governance-lab --yes --no-wait
-   ```
-
-1. Remove the management group:
-
-   ```bash
-   az account management-group delete --name mg-myob-prod
-   ```
+5. Select **Delete**.
 
 ---
 
 ## Key Takeaways
 
-- **Management groups** organise subscriptions into a hierarchy that enables policy
-  and RBAC inheritance at scale. Environment separation at the subscription level
-  (dev/test/prod) provides stronger isolation than resource groups alone.
-
 - **RBAC least privilege**: assign roles to groups, not individuals; use the
-  narrowest scope that satisfies the requirement; use custom roles to remove
-  permissions that built-in roles include but your scenario does not require.
+  narrowest scope that satisfies the requirement; use built-in roles as much as possible.
 
 - **Azure Policy** enforces governance standards at the control plane before
   resources are created. The `deny` effect prevents non-compliant deployments;
@@ -645,4 +515,3 @@ If you are using your own subscription, remove lab resources to avoid ongoing co
 - [Bicep documentation](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/)
 - [ARM template what-if](https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/deploy-what-if)
 - [Key Vault references in parameter files](https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/key-vault-parameter)
-- Lab file reference: `azuredeploy-storage.json` (provided in session materials)
