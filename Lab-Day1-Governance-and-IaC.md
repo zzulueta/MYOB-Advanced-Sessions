@@ -58,7 +58,7 @@ Tenant Root Group
 
 Azure RBAC controls who can do what at which scope. In this task you assign a built-in role to an individual at the resource group scope.
 
-1. Navigate to Resource Group assigned to you (example rg-governance-<yourname>) and select **Access control (IAM)**.
+1. Navigate to Resource Group assigned to you (example rg-governance-yourname) and select **Access control (IAM)**.
 
 2. Select the **Check access** tab and click **View my access** to see your current permissions on the resource group.
 
@@ -101,7 +101,7 @@ Azure Policy lets you enforce standards automatically. In this task you assign a
 
    | Setting | Value |
    | --- | --- |
-   | Resource Group | **rg-governance-<yourname>** |
+   | Resource Group | **rg-governance-yourname** |
 
    Select **Select**.
 
@@ -141,8 +141,8 @@ Azure Policy lets you enforce standards automatically. In this task you assign a
 
    | Setting | Value |
    | --- | --- |
-   | Resource group | **rg-governance-<yourname>** |
-   | Storage account name | `stlab<yourname>` |
+   | Resource group | **rg-governance-yourname** |
+   | Storage account name | `stlabyourname` |
    | Region | **Australia East** |
    | Preferred storage type | **Azure Blob Storage or Azure Data Lake Storage Gen 2** |
    | Redundancy | **LRS** |
@@ -173,7 +173,7 @@ Azure Policy lets you enforce standards automatically. In this task you assign a
 
 Resource locks prevent accidental deletion or modification, independent of RBAC permissions. An Owner can be blocked from deleting a resource if a lock is present.
 
-1. Navigate to **rg-governance-<yourname>**.
+1. Navigate to **rg-governance-yourname**.
 
 2. In the **Settings** blade, select **Locks**.
 
@@ -232,7 +232,7 @@ edit it to understand parameterisation.
 1. Open `template.json` in a text editor.
 
 2. In the `parameters` section, find the storage account name parameter.
-   Change its default value to `stlabdeploy<yourname>`.
+   Change its default value to `stlabdeployyourname`.
 
 3. Save the file.
 
@@ -285,10 +285,10 @@ In this task you use Azure Cloud Shell to deploy the storage account using both 
 1. Run the deployment command below:
 ```bash
 az deployment group create \
-  --resource-group rg-governance-<yourname> \
+  --resource-group rg-governance-yourname \
   --template-file template.json \
   --parameters parameters.json \
-  --parameters storageAccounts_stlabtestuser1_name=stlabdeploy<yourname>
+  --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
 ```
 
 2. Wait for the output to show `"provisioningState": "Succeeded"`.
@@ -297,7 +297,7 @@ az deployment group create \
 
 ```bash
    az storage account list \
-     --resource-group rg-governance-<yourname> \
+     --resource-group rg-governance-yourname \
      --query "[].{Name:name, Location:location, Sku:sku.name}" \
      -o table
 ```
@@ -308,10 +308,10 @@ az deployment group create \
 
 ```bash
 az deployment group create \
-  --resource-group rg-governance-<yourname> \
+  --resource-group rg-governance-yourname \
   --template-file template.json \
   --parameters parameters.json \
-  --parameters storageAccounts_stlabtestuser1_name=stlabdeploy<yourname>
+  --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
 ```
 
 2. Confirm the output again shows `"provisioningState": "Succeeded"` with no
@@ -340,7 +340,7 @@ az deployment group create \
    - Parameters declared with `param` keyword and types (`string`, `int`, `bool`)
    - Resources use a clean `resource` block with symbolic names
 
-4. Change the storage account name in the Bicep file to `stlabbicep<yourname>`.
+4. Change the storage account name in the Bicep file to `stlabbicepyourname`.
    Use **Ctrl+S** to save, **Ctrl+Q** to close the editor.
 
 ### Deploy using the Bicep file
@@ -348,7 +348,7 @@ az deployment group create \
 1. Run the deployment this time referencing the bicep file.
 ```bash
 az deployment group create \
-  --resource-group rg-governance-<yourname> \
+  --resource-group rg-governance-yourname \
   --template-file template.bicep
 ```
 
@@ -358,7 +358,7 @@ az deployment group create \
 
 ```bash
    az storage account list \
-     --resource-group rg-governance-<yourname> \
+     --resource-group rg-governance-yourname \
      --query "[].{Name:name}" \
      -o table
 ```
@@ -377,8 +377,8 @@ any changes. Use this before every production deployment.
    code template.bicep
 ```
 
-2. change the storage account name to `stlabwhatif<yourname>` 
-param storageAccounts_stlabtestuser1_name string = 'stlabwhatif<yourname>'
+2. change the storage account name to `stlabwhatifyourname` 
+param storageAccounts_stlabtestuser1_name string = 'stlabwhatifyourname'
 Save and close.
 
 3. Run a what-if check:
@@ -403,7 +403,7 @@ Save and close.
 In practice, do not rely only on inline `--parameters` overrides. Create separate
 parameter files per environment:
 
-1. In a text editor create the following files. Make sure to replace `<yourname>` with your unique identifier to avoid naming conflicts.
+1. In a text editor create the following files. Make sure to replace `yourname` with your unique identifier to avoid naming conflicts.
 
 - parameters.dev.json
    {
@@ -411,7 +411,7 @@ parameter files per environment:
      "contentVersion": "1.0.0.0",
      "parameters": {
        "storageAccounts_stlabtestuser1_name": {
-         "value": "stlabdev<yourname>"
+         "value": "stlabdevyourname"
        }
      }
    }
@@ -422,7 +422,7 @@ parameter files per environment:
      "contentVersion": "1.0.0.0",
      "parameters": {
        "storageAccounts_stlabtestuser1_name": {
-         "value": "stlabprod<yourname>"
+         "value": "stlabprodyourname"
        }
      }
    }
@@ -433,14 +433,14 @@ parameter files per environment:
 
 ```bash
    az deployment group create \
-     --resource-group rg-governance-<yourname> \
+     --resource-group rg-governance-yourname \
      --template-file template.bicep \
      --parameters @parameters.dev.json
 ```
 
 ### Review deployment history
 
-1. In the Azure portal, navigate to **rg-governance-<yourname>**.
+1. In the Azure portal, navigate to **rg-governance-yourname**.
 
 2. In the **Settings** blade, select **Deployments**.
 
