@@ -401,6 +401,18 @@ In this task you author an ARM template from scratch that uses all five sections
             "metadata": {
                 "description": "Deployment environment."
             }
+        },
+        "costCenter": {
+            "type": "string",
+            "metadata": {
+                "description": "Cost center for billing."
+            }
+        },
+        "department": {
+            "type": "string",
+            "metadata": {
+                "description": "Department that owns this resource."
+            }
         }
     },
 
@@ -440,7 +452,9 @@ In this task you author an ARM template from scratch that uses all five sections
             },
             "kind": "StorageV2",
             "tags": {
-                "Environment": "[parameters('environment')]"
+                "Environment": "[parameters('environment')]",
+                "CostCenter": "[parameters('costCenter')]",
+                "Department": "[parameters('department')]"
             },
             "properties": {
                 "accessTier": "Hot"
@@ -459,13 +473,14 @@ In this task you author an ARM template from scratch that uses all five sections
         }
     }
 }
+
 ```
 
 ### Understand what each section does
 
 | Section | Purpose in this template |
 | --- | --- |
-| **Parameters** | Accept `storageAccountName` and `environment` at deploy time |
+| **Parameters** | Accept `storageAccountName`, `environment`, `costCenter`, and `department` at deploy time |
 | **Variables** | Compute the SKU (GRS for prod, LRS otherwise) and combine name + environment into one string |
 | **Functions** | `myOrg.uniqueStorageName()` appends a deterministic hash to guarantee a globally unique storage account name |
 | **Resources** | Deploys a `StorageV2` storage account using the computed values |
@@ -475,6 +490,8 @@ In this task you author an ARM template from scratch that uses all five sections
 ```
 Parameter: storageAccountName = "mystore"
 Parameter: environment        = "dev"
+Parameter: costCenter         = "CC1234"
+Parameter: department         = "IT"
                 ↓
 Variable:  fullStorageName    = "mystoredev"
                 ↓
@@ -494,7 +511,7 @@ Output:    storageAccountName = "mystoredevabc123xyz7890"
 az deployment group what-if \
   --resource-group RG-Lab1 \
   --template-file sample-all-elements.json \
-  --parameters storageAccountName=mystore environment=dev
+  --parameters storageAccountName=mystore environment=dev costCenter=CC1234 department=IT
 ```
 
 2. Review the output and confirm the storage account shows as **Create**.
@@ -507,7 +524,7 @@ az deployment group what-if \
 az deployment group create \
   --resource-group RG-Lab1 \
   --template-file sample-all-elements.json \
-  --parameters storageAccountName=mystore environment=dev
+  --parameters storageAccountName=mystore environment=dev costCenter=CC1234 department=IT
 ```
 
 2. Confirm `"provisioningState": "Succeeded"` in the output.
