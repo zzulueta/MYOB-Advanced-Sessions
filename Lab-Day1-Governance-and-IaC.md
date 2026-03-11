@@ -301,7 +301,7 @@ az deployment group create \
   --parameters parameters.json \
   --parameters storageAccounts_stlabyourname=stlabdeployyourname
 ```
-Note: The parameters section in the ARM template may have a different parameter name based on the storage account name you used during export. Make sure to match the parameter name in the command with the one in your `parameters.json` file.
+Note: The parameters section in the ARM template may have a different parameter name based on the storage account name you used during export. Make sure to match the parameter name in the command with the one in your `parameters.json` file. In addition ensure stlabdeployyourname is replaced with your name to avoid naming conflicts with other students.
 
 
 2. Wait for the output to show `"provisioningState": "Succeeded"`.
