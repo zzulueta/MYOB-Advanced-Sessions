@@ -37,7 +37,7 @@ Your organisation is formalising its Azure landing zone ahead of a production wo
 Tenant Root Group
 └── Root Management Group
     └── [Your Subscription]
-        ├── rg-governance-lab (Resource Group)
+        ├── RG-Lab1 (Resource Group)
         │   ├── Azure Policy Assignment (Require Environment tag)
         │   ├── Resource Lock (delete lock)
         │   └── Storage Account (deployed via ARM + Bicep)
@@ -49,16 +49,17 @@ Tenant Root Group
 - Task 2: Enforce governance with Azure Policy and resource tags
 - Task 3: Protect resources with a resource lock
 - Task 4: Export and understand an ARM template
-- Task 5: Deploy ARM and Bicep templates via Cloud Shell
-- Task 6: Apply deployment best practices — parameters, what-if, and history
+- Task 5: Author an ARM template with all five sections
+- Task 6: Deploy ARM and Bicep templates via Cloud Shell
+- Task 7: Apply deployment best practices — parameters, what-if, and history
 
 ---
 
-## Task 1: Configure RBAC with Least-Privilege Role Assignment (0:10 – 0:20)
+## Task 1: Configure RBAC with Least-Privilege Role Assignment
 
 Azure RBAC controls who can do what at which scope. In this task you assign a built-in role to an individual at the resource group scope.
 
-1. Navigate to Resource Group assigned to you (example rg-governance-yourname) and select **Access control (IAM)**.
+1. Navigate to Resource Group assigned to you (example RG-Lab1) and select **Access control (IAM)**.
 
 2. Select the **Check access** tab and click **View my access** to see your current permissions on the resource group.
 
@@ -85,7 +86,7 @@ Best practices for RBAC:
 
 ---
 
-## Task 2: Enforce Governance with Azure Policy and Resource Tags (0:20 – 0:35)
+## Task 2: Enforce Governance with Azure Policy and Resource Tags
 
 Azure Policy lets you enforce standards automatically. In this task you assign a built-in policy that requires tag on all resources, then test that it blocks non-compliant deployments.
 
@@ -101,7 +102,7 @@ Azure Policy lets you enforce standards automatically. In this task you assign a
 
    | Setting | Value |
    | --- | --- |
-   | Resource Group | **rg-governance-yourname** |
+   | Resource Group | **RG-Lab1** |
 
    Select **Select**.
 
@@ -141,7 +142,7 @@ Azure Policy lets you enforce standards automatically. In this task you assign a
 
    | Setting | Value |
    | --- | --- |
-   | Resource group | **rg-governance-yourname** |
+   | Resource group | **RG-Lab1** |
    | Storage account name | `stlabyourname` |
    | Region | **Australia East** |
    | Preferred storage type | **Azure Blob Storage or Azure Data Lake Storage Gen 2** |
@@ -169,11 +170,11 @@ Azure Policy lets you enforce standards automatically. In this task you assign a
 
 ---
 
-## Task 3: Protect Resources with a Resource Lock (0:35 – 0:40)
+## Task 3: Protect Resources with a Resource Lock
 
 Resource locks prevent accidental deletion or modification, independent of RBAC permissions. An Owner can be blocked from deleting a resource if a lock is present.
 
-1. Navigate to **rg-governance-yourname**.
+1. Navigate to **RG-Lab1**.
 
 2. In the **Settings** blade, select **Locks**.
 
@@ -197,7 +198,7 @@ Resource locks prevent accidental deletion or modification, independent of RBAC 
 
 ---
 
-## Task 4: Export and Understand an ARM Template (0:40 – 0:50)
+## Task 4: Export and Understand an ARM Template
 
 Before writing templates, it helps to read one. In this task you export the ARM
 template for the storage account already deployed, examine its structure, and
@@ -238,7 +239,146 @@ edit it to understand parameterisation.
 
 ---
 
-## Task 5: Deploy ARM and Bicep Templates via Cloud Shell (0:50 – 1:10)
+## Task 5: Author an ARM Template with All Five Sections
+
+In this task you author an ARM template from scratch that uses all five sections: parameters, variables, user-defined functions, resources, and outputs.
+
+### Create the template
+
+1. Open a text editor and create a new file called `sample-all-elements.json`.
+
+2. Paste in the following template:
+
+```json
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+
+    "parameters": {
+        "storageAccountName": {
+            "type": "string",
+            "metadata": {
+                "description": "Base name for the storage account."
+            }
+        },
+        "environment": {
+            "type": "string",
+            "defaultValue": "dev",
+            "allowedValues": [ "dev", "test", "prod" ],
+            "metadata": {
+                "description": "Deployment environment."
+            }
+        }
+    },
+
+    "variables": {
+        "storageSku": "[if(equals(parameters('environment'), 'prod'), 'Standard_GRS', 'Standard_LRS')]",
+        "fullStorageName": "[concat(parameters('storageAccountName'), parameters('environment'))]"
+    },
+
+    "functions": [
+        {
+            "namespace": "myOrg",
+            "members": {
+                "uniqueStorageName": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[toLower(concat(parameters('baseName'), uniqueString(resourceGroup().id)))]"
+                    }
+                }
+            }
+        }
+    ],
+
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-01-01",
+            "name": "[myOrg.uniqueStorageName(variables('fullStorageName'))]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[variables('storageSku')]"
+            },
+            "kind": "StorageV2",
+            "tags": {
+                "Environment": "[parameters('environment')]"
+            },
+            "properties": {
+                "accessTier": "Hot"
+            }
+        }
+    ],
+
+    "outputs": {
+        "storageAccountName": {
+            "type": "string",
+            "value": "[myOrg.uniqueStorageName(variables('fullStorageName'))]"
+        },
+        "storageAccountId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Storage/storageAccounts', myOrg.uniqueStorageName(variables('fullStorageName')))]"
+        }
+    }
+}
+```
+
+### Understand what each section does
+
+| Section | Purpose in this template |
+| --- | --- |
+| **Parameters** | Accept `storageAccountName` and `environment` at deploy time |
+| **Variables** | Compute the SKU (GRS for prod, LRS otherwise) and combine name + environment into one string |
+| **Functions** | `myOrg.uniqueStorageName()` appends a deterministic hash to guarantee a globally unique storage account name |
+| **Resources** | Deploys a `StorageV2` storage account using the computed values |
+| **Outputs** | Returns the final storage account name and resource ID after deployment |
+
+**How the sections connect:**
+```
+Parameter: storageAccountName = "mystore"
+Parameter: environment        = "dev"
+                ↓
+Variable:  fullStorageName    = "mystoredev"
+                ↓
+Function:  uniqueStorageName("mystoredev") = "mystoredevabc123xyz7890"
+                ↓
+Resource:  name = "mystoredevabc123xyz7890"
+                ↓
+Output:    storageAccountName = "mystoredevabc123xyz7890"
+```
+
+### Run a what-if check
+
+Before deploying, preview the changes:
+
+```bash
+az deployment group what-if \
+  --resource-group RG-Lab1 \
+  --template-file sample-all-elements.json \
+  --parameters storageAccountName=mystore environment=dev
+```
+
+Review the output and confirm the storage account shows as **Create**.
+
+### Deploy the template
+
+```bash
+az deployment group create \
+  --resource-group RG-Lab1 \
+  --template-file sample-all-elements.json \
+  --parameters storageAccountName=mystore environment=dev
+```
+
+Confirm `"provisioningState": "Succeeded"` in the output.
+
+---
+
+## Task 6: Deploy ARM and Bicep Templates via Cloud Shell
 
 In this task you use Azure Cloud Shell to deploy the storage account using both the ARM template and a Bicep equivalent. You will also verify idempotency by re-running a deployment with no changes.
 
@@ -248,7 +388,7 @@ In this task you use Azure Cloud Shell to deploy the storage account using both 
    
 2. When prompted, select **Bash**.
 
-3. On the **Getting started** screen, select **No storage acccount required**, and select **Apply**. It may take a minute for the shell to provision.
+3. On the **Getting started** screen, select **No storage account required**, and select **Apply**. It may take a minute for the shell to provision.
 
 4. Verify your CLI version:
 
@@ -285,7 +425,7 @@ In this task you use Azure Cloud Shell to deploy the storage account using both 
 1. Run the deployment command below:
 ```bash
 az deployment group create \
-  --resource-group rg-governance-yourname \
+  --resource-group RG-Lab1 \
   --template-file template.json \
   --parameters parameters.json \
   --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
@@ -297,7 +437,7 @@ az deployment group create \
 
 ```bash
    az storage account list \
-     --resource-group rg-governance-yourname \
+     --resource-group RG-Lab1 \
      --query "[].{Name:name, Location:location, Sku:sku.name}" \
      -o table
 ```
@@ -308,7 +448,7 @@ az deployment group create \
 
 ```bash
 az deployment group create \
-  --resource-group rg-governance-yourname \
+  --resource-group RG-Lab1 \
   --template-file template.json \
   --parameters parameters.json \
   --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
@@ -348,7 +488,7 @@ az deployment group create \
 1. Run the deployment this time referencing the bicep file.
 ```bash
 az deployment group create \
-  --resource-group rg-governance-yourname \
+  --resource-group RG-Lab1 \
   --template-file template.bicep
 ```
 
@@ -358,14 +498,14 @@ az deployment group create \
 
 ```bash
    az storage account list \
-     --resource-group rg-governance-yourname \
+     --resource-group RG-Lab1 \
      --query "[].{Name:name}" \
      -o table
 ```
 
 ---
 
-## Task 7: Deployment Best Practices – What-If, Parameters, History (1:10 – 1:20)
+## Task 7: Deployment Best Practices – What-If, Parameters, History
 
 ### What-if: validate before you apply
 
@@ -377,15 +517,19 @@ any changes. Use this before every production deployment.
    code template.bicep
 ```
 
-2. change the storage account name to `stlabwhatifyourname` 
-param storageAccounts_stlabtestuser1_name string = 'stlabwhatifyourname'
-Save and close.
+2. Change the storage account name to `stlabwhatifyourname`:
+
+   ```bicep
+   param storageAccounts_stlabtestuser1_name string = 'stlabwhatifyourname'
+   ```
+
+   Use **Ctrl+S** to save, **Ctrl+Q** to close the editor.
 
 3. Run a what-if check:
 
 ```bash
    az deployment group what-if \
-     --resource-group rg-governance-lab \
+     --resource-group RG-Lab1 \
      --template-file template.bicep
 ```
 
@@ -405,27 +549,31 @@ parameter files per environment:
 
 1. In a text editor create the following files. Make sure to replace `yourname` with your unique identifier to avoid naming conflicts.
 
-- parameters.dev.json
+   **parameters.dev.json**
+   ```json
    {
      "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
      "contentVersion": "1.0.0.0",
      "parameters": {
-       "storageAccounts_stlabtestuser1_name": {
+       "storageAccounts_stlabyourname": {
          "value": "stlabdevyourname"
        }
      }
    }
- 
- - parameters.prod.json
+   ```
+
+   **parameters.prod.json**
+   ```json
    {
      "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
      "contentVersion": "1.0.0.0",
      "parameters": {
-       "storageAccounts_stlabtestuser1_name": {
+       "storageAccounts_stlabyourname": {
          "value": "stlabprodyourname"
        }
      }
    }
+   ```
 
 2. Upload them in the Cloud Shell using the **Manage files** pane.
 
@@ -433,14 +581,14 @@ parameter files per environment:
 
 ```bash
    az deployment group create \
-     --resource-group rg-governance-yourname \
+     --resource-group RG-Lab1 \
      --template-file template.bicep \
      --parameters @parameters.dev.json
 ```
 
 ### Review deployment history
 
-1. In the Azure portal, navigate to **rg-governance-yourname**.
+1. In the Azure portal, navigate to **RG-Lab1**.
 
 2. In the **Settings** blade, select **Deployments**.
 
