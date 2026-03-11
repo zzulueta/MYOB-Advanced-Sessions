@@ -350,6 +350,8 @@ Then run:
 4. Change the storage account name in the Bicep file to `stlabbicepyourname`.
    Use **Ctrl+S** to save, **Ctrl+Q** to close the editor.
 
+Note: you must modify stlabbicepyourname to include your name to avoid naming conflicts with other students.
+
 ### Deploy using the Bicep file
 
 1. Run the deployment this time referencing the bicep file.
@@ -482,10 +484,11 @@ Resource:  name = "mystoredevabc123xyz7890"
                 ↓
 Output:    storageAccountName = "mystoredevabc123xyz7890"
 ```
+3. Upload the file into the Cloud Shell using the **Manage files** pane.
 
 ### Run a what-if check
 
-Before deploying, preview the changes:
+1. Before deploying, preview the changes by running a what-if deployment:
 
 ```bash
 az deployment group what-if \
@@ -494,9 +497,11 @@ az deployment group what-if \
   --parameters storageAccountName=mystore environment=dev
 ```
 
-Review the output and confirm the storage account shows as **Create**.
+2. Review the output and confirm the storage account shows as **Create**.
 
 ### Deploy the template
+
+1. Run the command below:
 
 ```bash
 az deployment group create \
@@ -505,9 +510,7 @@ az deployment group create \
   --parameters storageAccountName=mystore environment=dev
 ```
 
-Confirm `"provisioningState": "Succeeded"` in the output.
-
----
+2. Confirm `"provisioningState": "Succeeded"` in the output.
 
 ---
 
