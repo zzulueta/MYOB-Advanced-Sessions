@@ -695,7 +695,6 @@ Note: Make sure to replace the storage account parameter to match the parameter 
 ## Resources
 
 - [Azure Governance documentation](https://learn.microsoft.com/en-us/azure/governance/)
-- [Management groups overview](https://learn.microsoft.com/en-us/azure/governance/management-groups/overview)
 - [Azure RBAC built-in roles](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles)
 - [Azure Policy built-in definitions](https://learn.microsoft.com/en-us/azure/governance/policy/samples/built-in-policies)
 - [ARM template reference](https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/)
