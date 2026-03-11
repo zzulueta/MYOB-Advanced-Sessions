@@ -573,12 +573,20 @@ any changes. Use this before every production deployment.
 5. Only proceed with `az deployment group create` once you are satisfied with
    the what-if output.
 
+```bash
+   az deployment group create \
+     --resource-group RG-Lab1 \
+     --template-file template.bicep
+```
+
 ### Environment-specific parameter files
 
 In practice, do not rely only on inline `--parameters` overrides. Create separate
 parameter files per environment:
 
-1. In a text editor create the following files. Make sure to replace `yourname` with your unique identifier to avoid naming conflicts.
+1. In a text editor create the following files. 
+
+Note: Make sure to replace the storage account parameter to match the parameter name in your template, and modify the storage account names to include your name to avoid naming conflicts with other students.
 
    **parameters.dev.json**
    ```json
