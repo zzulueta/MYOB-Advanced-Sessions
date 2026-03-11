@@ -586,7 +586,7 @@ parameter files per environment:
 
 1. In a text editor create the following files. 
 
-Note: Make sure to replace the storage account parameter to match the parameter name in your template, and modify the storage account names to include your name to avoid naming conflicts with other students.
+Note: Make sure to replace the storage account parameter to match the parameter name in your bicep template, and modify the storage account names to include your name to avoid naming conflicts with other students.
 
    **parameters.dev.json**
    ```json
