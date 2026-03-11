@@ -16,7 +16,10 @@ using both ARM templates and Bicep. You will work through the following tasks:
 - Deploy ARM and Bicep templates via Cloud Shell
 - Apply deployment best practices — what-if, parameter files, and history
 
-This lab requires an Azure subscription and Owner rights at the resource group level. 
+## Pre-requisites
+- an Azure subscription 
+- a resource group named RG-Lab1 
+- Owner rights at the resource group level. 
 
 ## Estimated Timing: 90 minutes
 
