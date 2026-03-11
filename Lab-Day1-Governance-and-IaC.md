@@ -246,7 +246,135 @@ edit it to understand parameterisation.
 
 ---
 
-## Task 5: Author an ARM Template with All Five Sections
+## Task 5: Deploy ARM and Bicep Templates via Cloud Shell
+
+In this task you use Azure Cloud Shell to deploy the storage account using both the ARM template and a Bicep equivalent. You will also verify idempotency by re-running a deployment with no changes.
+
+### Open Cloud Shell
+
+1. Select the **Cloud Shell** icon in the top-right of the Azure portal
+   
+2. When prompted, select **Bash**.
+
+3. On the **Getting started** screen, select **No storage account required**, and select **Apply**. It may take a minute for the shell to provision.
+
+4. Verify your CLI version:
+
+   ```bash
+   az --version
+   ```
+
+5. Confirm you are using the correct subscription:
+
+   ```bash
+   az account show --query "{name:name, id:id}" -o table
+   ```
+
+   If not, set it:
+
+   ```bash
+   az account set --subscription "<your-subscription-id>"
+   ```
+
+### Upload your template and parameter files
+
+1. Select the **Manage files** icon in the Cloud Shell toolbar and select **Upload**.
+
+2. Select both `template.json` and `parameters.json` downloaded in previous task and click Open.
+
+3. Confirm they are present:
+
+   ```bash
+   ls
+   ```
+
+### Deploy using the ARM template
+
+1. Run the deployment command below:
+
+   > **Note:** The parameter name `storageAccounts_stlabtestuser1_name` is generated from your specific storage account name during export. Open your downloaded `parameters.json` and use the parameter name that appears there instead.
+
+```bash
+az deployment group create \
+  --resource-group RG-Lab1 \
+  --template-file template.json \
+  --parameters parameters.json \
+  --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
+```
+
+2. Wait for the output to show `"provisioningState": "Succeeded"`.
+
+3. List the storage accounts in the resource group to confirm:
+
+```bash
+   az storage account list \
+     --resource-group RG-Lab1 \
+     --query "[].{Name:name, Location:location, Sku:sku.name}" \
+     -o table
+```
+
+### Verify idempotency
+
+1. Run the exact same deployment command again:
+
+```bash
+az deployment group create \
+  --resource-group RG-Lab1 \
+  --template-file template.json \
+  --parameters parameters.json \
+  --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
+```
+
+2. Confirm the output again shows `"provisioningState": "Succeeded"` with no
+   errors and no new resource created.
+
+**Idempotency** means running the same deployment twice produces the same end state without duplicating or erroring on existing resources. This is a core IaC principle — your deployments should be safe to re-run at any time.
+
+3. Go the Azure Portal and visit the Resource Group. Confirm that there are now two storage accounts present — the one created in Task 2 via the portal, and the one just deployed via the ARM template.
+
+### Convert the ARM template to Bicep
+
+1. In Cloud Shell, run:
+
+```bash
+   az bicep decompile --file template.json
+```
+
+2. Open the generated `.bicep` file in the Cloud Shell editor:
+
+```bash
+   code template.bicep
+```
+
+3. Compare the Bicep syntax to the ARM JSON. Notice:
+   - No `$schema` or `contentVersion` boilerplate
+   - Parameters declared with `param` keyword and types (`string`, `int`, `bool`)
+   - Resources use a clean `resource` block with symbolic names
+
+4. Change the storage account name in the Bicep file to `stlabbicepyourname`.
+   Use **Ctrl+S** to save, **Ctrl+Q** to close the editor.
+
+### Deploy using the Bicep file
+
+1. Run the deployment this time referencing the bicep file.
+```bash
+az deployment group create \
+  --resource-group RG-Lab1 \
+  --template-file template.bicep
+```
+
+2. Confirm `"provisioningState": "Succeeded"`.
+
+3. List storage accounts again to confirm that 3 storage accounts exist:
+
+```bash
+   az storage account list \
+     --resource-group RG-Lab1 \
+     --query "[].{Name:name}" \
+     -o table
+```
+---
+## Task 6: Author an ARM Template with All Five Sections
 
 In this task you author an ARM template from scratch that uses all five sections: parameters, variables, user-defined functions, resources, and outputs.
 
@@ -384,134 +512,6 @@ az deployment group create \
 Confirm `"provisioningState": "Succeeded"` in the output.
 
 ---
-
-## Task 6: Deploy ARM and Bicep Templates via Cloud Shell
-
-In this task you use Azure Cloud Shell to deploy the storage account using both the ARM template and a Bicep equivalent. You will also verify idempotency by re-running a deployment with no changes.
-
-### Open Cloud Shell
-
-1. Select the **Cloud Shell** icon in the top-right of the Azure portal
-   
-2. When prompted, select **Bash**.
-
-3. On the **Getting started** screen, select **No storage account required**, and select **Apply**. It may take a minute for the shell to provision.
-
-4. Verify your CLI version:
-
-   ```bash
-   az --version
-   ```
-
-5. Confirm you are using the correct subscription:
-
-   ```bash
-   az account show --query "{name:name, id:id}" -o table
-   ```
-
-   If not, set it:
-
-   ```bash
-   az account set --subscription "<your-subscription-id>"
-   ```
-
-### Upload your template and parameter files
-
-1. Select the **Manage files** icon in the Cloud Shell toolbar and select **Upload**.
-
-2. Select both `template.json` and `parameters.json` downloaded in previous task and click Open.
-
-3. Confirm they are present:
-
-   ```bash
-   ls
-   ```
-
-### Deploy using the ARM template
-
-1. Run the deployment command below:
-
-   > **Note:** The parameter name `storageAccounts_stlabtestuser1_name` is generated from your specific storage account name during export. Open your downloaded `parameters.json` and use the parameter name that appears there instead.
-
-```bash
-az deployment group create \
-  --resource-group RG-Lab1 \
-  --template-file template.json \
-  --parameters parameters.json \
-  --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
-```
-
-2. Wait for the output to show `"provisioningState": "Succeeded"`.
-
-3. List the storage accounts in the resource group to confirm:
-
-```bash
-   az storage account list \
-     --resource-group RG-Lab1 \
-     --query "[].{Name:name, Location:location, Sku:sku.name}" \
-     -o table
-```
-
-### Verify idempotency
-
-1. Run the exact same deployment command again:
-
-```bash
-az deployment group create \
-  --resource-group RG-Lab1 \
-  --template-file template.json \
-  --parameters parameters.json \
-  --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
-```
-
-2. Confirm the output again shows `"provisioningState": "Succeeded"` with no
-   errors and no new resource created.
-
-**Idempotency** means running the same deployment twice produces the same end state without duplicating or erroring on existing resources. This is a core IaC principle — your deployments should be safe to re-run at any time.
-
-3. Go the Azure Portal and visit the Resource Group. Confirm that there are now two storage accounts present — the one created in Task 2 via the portal, and the one just deployed via the ARM template.
-
-### Convert the ARM template to Bicep
-
-1. In Cloud Shell, run:
-
-```bash
-   az bicep decompile --file template.json
-```
-
-2. Open the generated `.bicep` file in the Cloud Shell editor:
-
-```bash
-   code template.bicep
-```
-
-3. Compare the Bicep syntax to the ARM JSON. Notice:
-   - No `$schema` or `contentVersion` boilerplate
-   - Parameters declared with `param` keyword and types (`string`, `int`, `bool`)
-   - Resources use a clean `resource` block with symbolic names
-
-4. Change the storage account name in the Bicep file to `stlabbicepyourname`.
-   Use **Ctrl+S** to save, **Ctrl+Q** to close the editor.
-
-### Deploy using the Bicep file
-
-1. Run the deployment this time referencing the bicep file.
-```bash
-az deployment group create \
-  --resource-group RG-Lab1 \
-  --template-file template.bicep
-```
-
-2. Confirm `"provisioningState": "Succeeded"`.
-
-3. List storage accounts again to confirm that 3 storage accounts exist:
-
-```bash
-   az storage account list \
-     --resource-group RG-Lab1 \
-     --query "[].{Name:name}" \
-     -o table
-```
 
 ---
 
