@@ -292,15 +292,17 @@ In this task you use Azure Cloud Shell to deploy the storage account using both 
 
 1. Run the deployment command below:
 
-   > **Note:** The parameter name `storageAccounts_stlabtestuser1_name` is generated from your specific storage account name during export. Open your downloaded `parameters.json` and use the parameter name that appears there instead.
+   > **Note:** The parameter name `storageAccounts_stlab***` is generated from your specific storage account name during export. Open your downloaded `parameters.json` and use the parameter name that appears there instead.
 
 ```bash
 az deployment group create \
   --resource-group RG-Lab1 \
   --template-file template.json \
   --parameters parameters.json \
-  --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
+  --parameters storageAccounts_stlabyourname=stlabdeployyourname
 ```
+Note: The parameters section in the ARM template may have a different parameter name based on the storage account name you used during export. Make sure to match the parameter name in the command with the one in your `parameters.json` file.
+
 
 2. Wait for the output to show `"provisioningState": "Succeeded"`.
 
@@ -315,15 +317,7 @@ az deployment group create \
 
 ### Verify idempotency
 
-1. Run the exact same deployment command again:
-
-```bash
-az deployment group create \
-  --resource-group RG-Lab1 \
-  --template-file template.json \
-  --parameters parameters.json \
-  --parameters storageAccounts_stlabtestuser1_name=stlabdeployyourname
-```
+1. Run the exact same deployment command again you used previously.
 
 2. Confirm the output again shows `"provisioningState": "Succeeded"` with no
    errors and no new resource created.
