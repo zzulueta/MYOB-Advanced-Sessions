@@ -529,6 +529,8 @@ az deployment group create \
 
 2. Confirm `"provisioningState": "Succeeded"` in the output.
 
+3. Verify the resource group that the new storage account has been created with the expected name, SKU, and tags.
+
 ---
 
 ## Task 7: Deployment Best Practices – What-If, Parameters, History
