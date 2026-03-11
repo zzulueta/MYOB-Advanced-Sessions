@@ -12,13 +12,13 @@ In this lab you build a governance foundation in Azure and then deploy infrastru
 using both ARM templates and Bicep. You will work through the following tasks:
 - Configure RBAC with least-privilege role assignment
 - Enforce standards with Azure Policy, tags, and resource locks
-- Author and deploy ARM templates
-- Convert ARM templates to Bicep
-- Validate deployments using what-if before applying changes
+- Export, understand, and author ARM templates
+- Deploy ARM and Bicep templates via Cloud Shell
+- Apply deployment best practices — what-if, parameter files, and history
 
 This lab requires an Azure subscription and Owner rights at the resource group level. 
 
-## Estimated Timing: 75 minutes
+## Estimated Timing: 90 minutes
 
 ## Lab Scenario
 
@@ -27,6 +27,8 @@ Your organisation is formalising its Azure landing zone ahead of a production wo
 - Providing users with a Virtual Machine Contributor role to allow self-service provisioning of compute resources
 - Enforcing mandatory `Environment`, `CostCenter`, and `Department` tags using Azure Policy
 - Protecting shared resources against accidental deletion using resource locks
+- Exporting and examining an ARM template to understand its structure and sections
+- Authoring an ARM template from scratch using all five sections: parameters, variables, functions, resources, and outputs
 - Deploying a baseline storage account using an ARM template and a Bicep file via
   Cloud Shell, using separate parameter files for dev and prod
 - Running a what-if check to validate changes before applying them
@@ -38,7 +40,7 @@ Tenant Root Group
 └── Root Management Group
     └── [Your Subscription]
         ├── RG-Lab1 (Resource Group)
-        │   ├── Azure Policy Assignment (Require Environment tag)
+        │   ├── Azure Policy Assignments (3 tag policies)
         │   ├── Resource Lock (delete lock)
         │   └── Storage Account (deployed via ARM + Bicep)
 ```
@@ -59,7 +61,7 @@ Tenant Root Group
 
 Azure RBAC controls who can do what at which scope. In this task you assign a built-in role to an individual at the resource group scope.
 
-1. Navigate to Resource Group assigned to you (example RG-Lab1) and select **Access control (IAM)**.
+1. Navigate to **RG-Lab1** and select **Access control (IAM)**.
 
 2. Select the **Check access** tab and click **View my access** to see your current permissions on the resource group.
 
@@ -225,6 +227,8 @@ edit it to understand parameterisation.
    by swapping the parameter file.
 
 4. Select **Download** for the Template and Parameters files.
+
+**Note:** The exported template will typically include `parameters`, `variables`, and `resources` sections but will not contain `functions` or `outputs` — those are less common in portal-exported templates. Task 5 demonstrates all five sections together in a template authored from scratch.
 
 **Why separate parameters?** A template describes *what* to deploy. A parameters file describes *how* to deploy it for a specific environment. Storing `parameters.dev.json` and `parameters.prod.json` in source control alongside your template means environment differences are explicit, auditable, and reproducible.
 
@@ -423,6 +427,9 @@ In this task you use Azure Cloud Shell to deploy the storage account using both 
 ### Deploy using the ARM template
 
 1. Run the deployment command below:
+
+   > **Note:** The parameter name `storageAccounts_stlabtestuser1_name` is generated from your specific storage account name during export. Open your downloaded `parameters.json` and use the parameter name that appears there instead.
+
 ```bash
 az deployment group create \
   --resource-group RG-Lab1 \
@@ -459,7 +466,7 @@ az deployment group create \
 
 **Idempotency** means running the same deployment twice produces the same end state without duplicating or erroring on existing resources. This is a core IaC principle — your deployments should be safe to re-run at any time.
 
-3. Go the Azure Portal and visit the Resource Group. Confirm that there are two storage accounts present.
+3. Go the Azure Portal and visit the Resource Group. Confirm that there are now two storage accounts present — the one created in Task 2 via the portal, and the one just deployed via the ARM template.
 
 ### Convert the ARM template to Bicep
 
@@ -512,10 +519,11 @@ az deployment group create \
 The `--what-if` flag shows exactly what a deployment *would* change without making
 any changes. Use this before every production deployment.
 
-1. In Cloud Shell, edit `template.bicep` 
-```bash
+1. In Cloud Shell, edit `template.bicep`:
+
+   ```bash
    code template.bicep
-```
+   ```
 
 2. Change the storage account name to `stlabwhatifyourname`:
 
