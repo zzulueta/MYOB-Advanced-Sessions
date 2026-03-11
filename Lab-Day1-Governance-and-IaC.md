@@ -328,7 +328,9 @@ Note: The parameters section in the ARM template may have a different parameter 
 
 ### Convert the ARM template to Bicep
 
-1. In Cloud Shell, run:
+1. In Cloud Shell, select Settings->Go to Classic version. 
+
+Then run:
 
 ```bash
    az bicep decompile --file template.json
