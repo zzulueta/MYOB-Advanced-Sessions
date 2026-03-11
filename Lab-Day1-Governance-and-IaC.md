@@ -554,6 +554,8 @@ any changes. Use this before every production deployment.
 
    Use **Ctrl+S** to save, **Ctrl+Q** to close the editor.
 
+   Note: you must modify stlabwhatifyourname to include your name to avoid naming conflicts with other students.
+
 3. Run a what-if check:
 
 ```bash
