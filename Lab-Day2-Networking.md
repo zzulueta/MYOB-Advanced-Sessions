@@ -12,7 +12,7 @@ In this lab you build a segmented network foundation in Azure and then progressi
 connect and protect it. You will work through the following tasks:
 
 - Design and create virtual networks with subnets
-- Protect subnets with Network Security Groups and Application Security Groups
+- Protect the database subnet with a Network Security Group
 - Provide name resolution with public and private Azure DNS zones
 - Connect segmented networks using virtual network peering
 - Distribute traffic at Layer 4 using Azure Load Balancer
@@ -28,22 +28,18 @@ connect and protect it. You will work through the following tasks:
 
 ## Lab Scenario
 
-Your organisation is deploying a segmented Azure network environment. Core IT
-services (DNS, security tooling, databases) are isolated from the manufacturing
-department's operational systems, but controlled connectivity between the two
-segments is required for inter-system communication.
-
-At the same time, a public-facing web application must be highly available.
-Incoming HTTP requests must be distributed across multiple virtual machines using a
-standard Load Balancer, and image and video content must be routed to dedicated
-backend pools using the Application Gateway's path-based routing capability.
+Your organisation is deploying a two-tier Azure network environment. Core IT
+services — DNS, security infrastructure, and a backend database — live in a dedicated
+`CoreServicesVnet`. The public-facing application tier runs in a separate `AppVnet`
+with two web server VMs. The two VNets must be connected so the application tier can
+reach the database subnet, while remaining isolated from the internet.
 
 You have been tasked with:
 
-- Creating two virtual networks with properly sized subnets for each segment
-- Enforcing traffic controls between subnets using NSG and ASG rules
+- Creating the `CoreServicesVnet` with subnets for shared services and the database tier
+- Enforcing traffic controls using a Network Security Group on the database subnet
 - Providing private and public DNS resolution
-- Enabling cross-segment connectivity via virtual network peering
+- Provisioning the `AppVnet` with backend VMs, then connecting it to `CoreServicesVnet` via peering
 - Deploying and configuring an Azure Load Balancer for Layer 4 traffic distribution
 - Deploying and configuring an Azure Application Gateway for Layer 7 path-based routing
 
@@ -56,31 +52,28 @@ Subscription
     │   ├── SharedServicesSubnet (10.20.10.0/24)  ← NSG applied
     │   └── DatabaseSubnet (10.20.20.0/24)
     │
-    ├── ManufacturingVnet (10.30.0.0/16)
-    │   ├── SensorSubnet1 (10.30.20.0/24)
-    │   └── SensorSubnet2 (10.30.21.0/24)
-    │
-    ├── VNet Peering: CoreServicesVnet ↔ ManufacturingVnet
-    │
     ├── AppVnet (10.60.0.0/16)
     │   ├── BackendSubnet1 (10.60.1.0/24)  ← vm0
-    │   ├── BackendSubnet2 (10.60.2.0/24)  ← vm1, vm2
+    │   ├── BackendSubnet2 (10.60.2.0/24)  ← vm1
     │   └── AppGwSubnet (10.60.3.224/27)   ← Application Gateway
     │
-    ├── Application Security Group: asg-web
-    ├── Network Security Group: myNSGSecure (→ SharedServicesSubnet)
-    ├── Public DNS Zone: contoso.com
-    ├── Private DNS Zone: private.contoso.com (→ CoreServicesVnet)
+    ├── VNet Peering: CoreServicesVnet ↔ AppVnet
+    │   (allows app tier VMs to reach DatabaseSubnet)
+    │
+    ├── Network Security Group: myNSGSecure (→ DatabaseSubnet)
+    │   └── Inbound: allow TCP 1433 from AppVnet (10.60.0.0/16)
+    ├── Public DNS Zone: adventuretravel.com
+    ├── Private DNS Zone: private.adventuretravel.com (→ CoreServicesVnet)
     ├── Azure Load Balancer (Standard, Public) → vm0, vm1
-    └── Application Gateway (Standard V2, path-based) → /image/* vm1, /video/* vm2
+    └── Application Gateway (Standard V2, path-based) → /image/* vm0, /video/* vm1
 ```
 
 ## Job Skills
 
 - Task 1: Create virtual networks and subnets
-- Task 2: Secure networks with NSG and ASG
+- Task 2: Protect the database subnet with a Network Security Group
 - Task 3: Configure public and private Azure DNS zones
-- Task 4: Connect networks with virtual network peering
+- Task 4: Deploy backend VMs and configure VNet peering
 - Task 5: Configure an Azure Load Balancer
 - Task 6: Configure an Azure Application Gateway with path-based routing
 
@@ -89,9 +82,9 @@ Subscription
 ## Task 1: Create Virtual Networks and Subnets
 
 Virtual networks are the foundational building block for private networking in Azure.
-In this task you create two virtual networks — one for core services and one for
-manufacturing — each with appropriately sized subnets to accommodate current resources
-and planned growth.
+In this task you create both VNets upfront — `CoreServicesVnet` for the internal tier
+and `AppVnet` for the application tier — so all subsequent tasks can reference them
+without ordering dependencies.
 
 > **Design note:** It is a good practice to avoid overlapping IP address ranges across all virtual networks and any connected on-premises networks. Overlapping ranges block peering and increase troubleshooting complexity. Plan your IP addressing scheme across the entire environment before deploying.
 
@@ -122,61 +115,46 @@ and planned growth.
 
 6. Select **Review + create**, then **Create**. Wait for the deployment to succeed.
 
-### Create the ManufacturingVnet
+### Create the AppVnet
 
-7. Select **+ Create** again to create a second virtual network.
+7. Select **+ Create** again.
 
 8. On the **Basics** tab:
 
    | Setting | Value |
    | --- | --- |
    | Resource group | **RG-Lab2** |
-   | Name | `ManufacturingVnet` |
+   | Name | `AppVnet` |
    | Region | **Australia East** |
 
-9. On the **IP Addresses** tab, replace the address space with `10.30.0.0/16`.
+9. On the **IP Addresses** tab, replace the address space with `10.60.0.0/16`.
 
-10. Delete the default subnet and add the following two subnets:
+10. Delete the default subnet and add the following subnets:
 
     | Subnet | Subnet name | Starting address | Size |
     | --- | --- | --- | --- |
-    | First | `SensorSubnet1` | `10.30.20.0` | `/24` |
-    | Second | `SensorSubnet2` | `10.30.21.0` | `/24` |
+    | First | `BackendSubnet1` | `10.60.1.0` | `/24` |
+    | Second | `BackendSubnet2` | `10.60.2.0` | `/24` |
 
-11. Select **Review + create**, then **Create**.
+11. Select **Review + create**, then **Create**. Wait for the deployment to succeed.
 
-12. After both virtual networks are deployed, navigate to **CoreServicesVnet**. On the **Overview** blade, verify the address space (`10.20.0.0/16`) and confirm both subnets appear under the **Subnets** section.
+12. Confirm both VNets appear in the portal. Navigate to each and verify the address space and subnets are correct.
 
 ---
 
-## Task 2: Secure Networks with NSG and ASG
+## Task 2: Protect the Database Subnet with a Network Security Group
 
-Network Security Groups (NSGs) filter inbound and outbound traffic using rules based
-on source, destination, protocol, and port. Application Security Groups (ASGs) let
-you group virtual machines logically — such as "all web servers" — and use that group
-as the source or destination in NSG rules, rather than managing individual IP addresses.
-
-### Create the Application Security Group
-
-1. Search for and select **Application security groups**, then select **+ Create**.
-
-2. Configure the following:
-
-   | Setting | Value |
-   | --- | --- |
-   | Resource group | **RG-Lab2** |
-   | Name | `asg-web` |
-   | Region | **Australia East** |
-
-3. Select **Review + create**, then **Create**.
-
-   > **Note:** In production you would associate this ASG with virtual machine NICs. Any NSG rule targeting `asg-web` will automatically apply to all VMs associated with it — no IP address management required.
+Network Security Groups (NSGs) filter inbound and outbound traffic using priority-ordered
+rules based on source, destination, protocol, and port. In this task you attach an NSG
+directly to the `DatabaseSubnet` so that only traffic from the `AppVnet` address space
+(`10.60.0.0/16`) can reach it on port 1433. All other inbound traffic is denied by the
+default rules, and outbound internet access is explicitly blocked.
 
 ### Create the Network Security Group
 
-4. Search for and select **Network security groups**, then select **+ Create**.
+1. Search for and select **Network security groups**, then select **+ Create**.
 
-5. Configure:
+2. Configure:
 
    | Setting | Value |
    | --- | --- |
@@ -184,45 +162,45 @@ as the source or destination in NSG rules, rather than managing individual IP ad
    | Name | `myNSGSecure` |
    | Region | **Australia East** |
 
-6. Select **Review + create**, then **Create**, then **Go to resource**.
+3. Select **Review + create**, then **Create**, then **Go to resource**.
 
-### Associate the NSG with a subnet
+### Associate the NSG with the database subnet
 
-7. In the **Settings** blade of `myNSGSecure`, select **Subnets**, then **+ Associate**.
+4. In the **Settings** blade of `myNSGSecure`, select **Subnets**, then **+ Associate**.
 
    | Setting | Value |
    | --- | --- |
    | Virtual network | **CoreServicesVnet (RG-Lab2)** |
-   | Subnet | **SharedServicesSubnet** |
+   | Subnet | **DatabaseSubnet** |
 
-8. Select **OK** to save the association.
+5. Select **OK** to save the association.
 
-### Add an inbound rule to allow web traffic from the ASG
+### Add an inbound rule to allow app tier access
 
-9. In the **Settings** blade, select **Inbound security rules**, then **+ Add**.
+6. In the **Settings** blade, select **Inbound security rules**, then **+ Add**.
 
-10. Configure the inbound rule:
+7. Configure the inbound rule:
 
-    | Setting | Value |
-    | --- | --- |
-    | Source | **Application security group** |
-    | Source application security groups | **asg-web** |
-    | Source port ranges | `*` |
-    | Destination | **Any** |
-    | Service | **Custom** |
-    | Destination port ranges | `80,443` |
-    | Protocol | **TCP** |
-    | Action | **Allow** |
-    | Priority | `100` |
-    | Name | `AllowASG` |
+   | Setting | Value |
+   | --- | --- |
+   | Source | **IP Addresses** |
+   | Source IP addresses/CIDR ranges | `10.60.0.0/16` |
+   | Source port ranges | `*` |
+   | Destination | **Any** |
+   | Service | **Custom** |
+   | Destination port ranges | `1433` |
+   | Protocol | **TCP** |
+   | Action | **Allow** |
+   | Priority | `100` |
+   | Name | `AllowAppVnetToDatabase` |
 
-11. Select **Add**.
+8. Select **Add**.
 
 ### Add an outbound rule to deny internet access
 
-12. Select **Outbound security rules**, then **+ Add**.
+9. Select **Outbound security rules**, then **+ Add**.
 
-13. Configure the outbound rule:
+10. Configure the outbound rule:
 
     | Setting | Value |
     | --- | --- |
@@ -237,9 +215,9 @@ as the source or destination in NSG rules, rather than managing individual IP ad
     | Priority | `4096` |
     | Name | `DenyInternetOutbound` |
 
-14. Select **Add**.
+11. Select **Add**.
 
-**Key point:** NSG rules are evaluated in priority order — lowest number is processed first. The default `AllowInternetOutBound` rule has priority 65001, so the `DenyInternetOutbound` rule at 4096 overrides it. The default inbound and outbound rules cannot be deleted; you override them with higher-priority rules.
+**Key point:** NSG rules are evaluated in priority order — lowest number is processed first. The default `AllowInternetOutBound` rule has priority 65001, so the `DenyInternetOutbound` rule at 4096 overrides it. By attaching the NSG directly to `DatabaseSubnet`, the rules apply to all traffic entering or leaving that subnet regardless of which VM it targets.
 
 ---
 
@@ -274,7 +252,7 @@ zones provide name resolution exclusively within virtual networks — no public 
    | TTL | `1` |
    | IP address | `10.20.10.4` |
 
-   > **Note:** In a real-world scenario this would be the public IP of your web server or load balancer.
+   > **Note:** `10.20.10.4` is the first usable host address in `SharedServicesSubnet` — this is the private IP that `CoreServicesVM` will receive when deployed in Task 4. In a production scenario this record would point to a public IP or load balancer frontend.
 
 6. Select **Add**. Confirm the `www` A record appears in the recordset list.
 
@@ -295,132 +273,73 @@ zones provide name resolution exclusively within virtual networks — no public 
    | Property | Value |
    | --- | --- |
    | Resource group | **RG-Lab2** |
-   | Name | `private.contoso.com` |
+   | Name | `private.adventuretravel.com` |
 
 10. Select **Review + create**, then **Create**. Select **Go to resource**.
 
 11. Notice the **Overview** blade shows no name server records — private zones are not registered in public DNS.
 
-12. In the **DNS Management** blade, select **Virtual network links**, then **+ Add**.
+12. Link the zone to `CoreServicesVnet` with auto-registration enabled. In the **DNS Management** blade, select **Virtual network links**, then **+ Add**.
 
     | Property | Value |
     | --- | --- |
     | Link name | `coreservices-link` |
     | Virtual network | **CoreServicesVnet** |
-    | Enable auto registration | Leave unchecked |
+    | Enable auto registration | **Checked** |
 
-13. Select **OK** and wait for the link status to show **Completed**.
+    Select **OK** and wait for the link status to show **Completed**.
 
-14. Select **Recordsets**, then **+ Add**:
+13. Add a second link so `AppVnet` VMs can also resolve the private zone. Select **+ Add** again:
 
     | Property | Value |
     | --- | --- |
-    | Name | `db01` |
-    | Type | **A** |
-    | TTL | `1` |
-    | IP address | `10.20.20.4` |
+    | Link name | `appvnet-link` |
+    | Virtual network | **AppVnet** |
+    | Enable auto registration | Leave unchecked |
 
-    > **Note:** In production, this record would point to an actual database server private IP in the DatabaseSubnet.
+    Select **OK** and wait for the link status to show **Completed**.
 
-**Why private DNS?** Any VM connected to `CoreServicesVnet` can now resolve `db01.private.contoso.com` to `10.20.20.4` without the record being visible on the internet. This eliminates hardcoded IP addresses in application configuration files.
+    > **Note:** Auto-registration is only enabled for `CoreServicesVnet`. When `CoreServicesVM` is deployed in Task 4, Azure will automatically create an A record `coreservicesvm.private.adventuretravel.com` pointing to its private IP. `AppVnet` is linked as a resolver only — its VMs can look up the zone but won't have records auto-created.
 
----
-
-## Task 4: Connect Networks with Virtual Network Peering
-
-By default, resources in different virtual networks cannot communicate — even within
-the same subscription and region. Virtual network peering creates a direct,
-low-latency connection that uses the Microsoft backbone, not the public internet.
-Peered networks appear as one for connectivity purposes.
-
-### Configure bidirectional peering
-
-1. In the Azure portal, navigate to **CoreServicesVnet**.
-
-2. Under **Settings**, select **Peerings**, then **+ Add**.
-
-3. Fill in both sides of the peering simultaneously — Azure creates the return peering automatically:
-
-   | Parameter | Value |
-   | --- | --- |
-   | **Remote virtual network summary** | |
-   | Peering link name | `ManufacturingVnet-to-CoreServicesVnet` |
-   | Virtual network | **ManufacturingVnet (RG-Lab2)** |
-   | **Remote virtual network peering settings** | |
-   | Allow 'ManufacturingVnet' to access 'CoreServicesVnet' | Selected (default) |
-   | Allow 'ManufacturingVnet' to receive forwarded traffic from 'CoreServicesVnet' | Selected |
-   | **Local virtual network summary** | |
-   | Peering link name | `CoreServicesVnet-to-ManufacturingVnet` |
-   | **Local virtual network peering settings** | |
-   | Allow 'CoreServicesVnet' to access 'ManufacturingVnet' | Selected (default) |
-   | Allow 'CoreServicesVnet' to receive forwarded traffic from 'ManufacturingVnet' | Selected |
-
-4. Select **Add** and wait a few seconds.
-
-5. In the **Peerings** blade of `CoreServicesVnet`, confirm the peering **Peering status** shows **Connected**. Refresh if needed.
-
-6. Navigate to **ManufacturingVnet → Peerings** and verify the reverse peering also shows **Connected**.
-
-### Verify connectivity with Network Watcher
-
-7. Search for and select **Network Watcher**.
-
-8. In the **Network diagnostic tools** section, select **Connection troubleshoot**.
-
-9. If you have virtual machines deployed in the two VNets, test connectivity between them. If not, observe the available fields:
-
-   | Field | Value |
-   | --- | --- |
-   | Source type | **Virtual machine** |
-   | Destination type | **Select a virtual machine** |
-   | Protocol | **TCP** |
-   | Destination port | `3389` |
-
-   Before peering: the test would show **Unreachable**.  
-   After peering: the test shows **Reachable** — confirming the peering is active.
-
-**Key point:** Virtual network peering is non-transitive by default. If VNet A peers with VNet B, and VNet B peers with VNet C, VNet A cannot reach VNet C through VNet B. To achieve transitive routing you need either a hub VNet with a Network Virtual Appliance, or Azure Virtual WAN.
+**Why private DNS?** VMs in both peered VNets can now resolve `coreservicesvm.private.adventuretravel.com` without the record being visible on the internet. When the VM is replaced or its IP changes, the auto-registered record updates automatically — no manual DNS management required.
 
 ---
 
-## Task 5: Configure an Azure Load Balancer
+## Task 4: Deploy Backend VMs and Configure VNet Peering
 
-Azure Load Balancer operates at Layer 4 (TCP/UDP) and distributes inbound traffic
-across backend virtual machines. The Standard SKU provides zone redundancy, SLA
-guarantees, and health probes — use it for all production workloads.
+In this task you deploy three VMs via Cloud Shell — `CoreServicesVM` in `CoreServicesVnet`
+for connectivity testing, and two nginx web servers in `AppVnet` for Tasks 5 and 6.
+Once the VMs are provisioning, you configure VNet peering and verify cross-VNet
+connectivity.
 
-In this task you also create the `AppVnet` and provision two backend VMs required
-for Tasks 5 and 6. To keep within the lab timing, deploy the VMs using Cloud Shell.
-
-### Provision the lab infrastructure
+### Deploy backend VMs
 
 1. Open **Cloud Shell** (Bash) from the top-right of the portal.
 
-2. Run the following commands to create the `AppVnet` and two backend VMs. Replace `<password>` with a complex password of your choice.
+2. Run the following commands to deploy all three VMs. Replace `<password>` with a complex password of your choice.
 
    ```bash
-   # Create AppVnet with two backend subnets
-   az network vnet create \
-     --resource-group RG-Lab2 \
-     --name AppVnet \
-     --address-prefixes 10.60.0.0/16 \
-     --subnet-name BackendSubnet1 \
-     --subnet-prefixes 10.60.1.0/24
-
-   az network vnet subnet create \
-     --resource-group RG-Lab2 \
-     --vnet-name AppVnet \
-     --name BackendSubnet2 \
-     --address-prefixes 10.60.2.0/24
-
-   # Create an NSG to allow HTTP traffic to the backend VMs
+   # NSG to allow HTTP to the AppVnet backend VMs
    az network nsg create --resource-group RG-Lab2 --name app-nsg
    az network nsg rule create \
      --resource-group RG-Lab2 --nsg-name app-nsg \
      --name AllowHTTP --priority 100 \
      --protocol Tcp --destination-port-ranges 80 --access Allow
 
-   # Deploy vm0 into BackendSubnet1
+   # CoreServicesVM in SharedServicesSubnet (used for peering verification)
+   az vm create \
+     --resource-group RG-Lab2 \
+     --name CoreServicesVM \
+     --image Ubuntu2204 \
+     --vnet-name CoreServicesVnet \
+     --subnet SharedServicesSubnet \
+     --public-ip-address "" \
+     --admin-username azureuser \
+     --admin-password <password> \
+     --size Standard_B1s \
+     --no-wait
+
+   # vm0 in BackendSubnet1
    az vm create \
      --resource-group RG-Lab2 \
      --name az104-06-vm0 \
@@ -439,7 +358,7 @@ for Tasks 5 and 6. To keep within the lab timing, deploy the VMs using Cloud She
    systemctl enable nginx && systemctl start nginx' \
      --no-wait
 
-   # Deploy vm1 into BackendSubnet2
+   # vm1 in BackendSubnet2
    az vm create \
      --resource-group RG-Lab2 \
      --name az104-06-vm1 \
@@ -459,13 +378,111 @@ for Tasks 5 and 6. To keep within the lab timing, deploy the VMs using Cloud She
      --no-wait
    ```
 
-3. While the VMs are deploying (approximately 5 minutes), proceed to create the Load Balancer.
+3. All three VMs deploy in the background (approximately 5 minutes). Continue with the peering steps while they provision.
+
+### Configure bidirectional peering
+
+By default, resources in different virtual networks cannot communicate — even within
+the same subscription and region. Virtual network peering creates a direct,
+low-latency connection over the Microsoft backbone, not the public internet.
+
+4. In the Azure portal, navigate to **CoreServicesVnet**.
+
+5. Under **Settings**, select **Peerings**, then **+ Add**.
+
+6. Fill in both sides of the peering simultaneously — Azure creates the return link automatically:
+
+   | Parameter | Value |
+   | --- | --- |
+   | **Remote virtual network summary** | |
+   | Peering link name | `AppVnet-to-CoreServicesVnet` |
+   | Virtual network | **AppVnet (RG-Lab2)** |
+   | **Remote virtual network peering settings** | |
+   | Allow 'AppVnet' to access 'CoreServicesVnet' | Selected (default) |
+   | Allow 'AppVnet' to receive forwarded traffic from 'CoreServicesVnet' | Selected |
+   | **Local virtual network summary** | |
+   | Peering link name | `CoreServicesVnet-to-AppVnet` |
+   | **Local virtual network peering settings** | |
+   | Allow 'CoreServicesVnet' to access 'AppVnet' | Selected (default) |
+   | Allow 'CoreServicesVnet' to receive forwarded traffic from 'AppVnet' | Selected |
+
+7. Select **Add** and wait a few seconds.
+
+8. In the **Peerings** blade of `CoreServicesVnet`, confirm the **Peering status** shows **Connected**. Refresh if needed.
+
+9. Navigate to **AppVnet → Peerings** and verify the reverse peering also shows **Connected**.
+
+### Verify connectivity with Network Watcher
+
+10. Confirm all three VMs have finished deploying:
+
+    ```bash
+    az vm list --resource-group RG-Lab2 --show-details \
+      --query "[].{Name:name, State:powerState}" -o table
+    ```
+
+    Wait until all three show `VM running` before continuing.
+
+11. Retrieve the private IP address of `CoreServicesVM`:
+
+    ```bash
+    az vm show --resource-group RG-Lab2 --name CoreServicesVM \
+      --show-details --query privateIps -o tsv
+    ```
+
+    Note this IP — you will use it as the destination in the Network Watcher test.
+
+12. Search for and select **Network Watcher**.
+
+13. In the **Network diagnostic tools** section, select **Connection troubleshoot**.
+
+14. Configure the test:
+
+    | Field | Value |
+    | --- | --- |
+    | Source type | **Virtual machine** |
+    | Virtual machine | **az104-06-vm0** |
+    | Destination type | **Virtual machine** |
+    | Virtual machine | **CoreServicesVM** |
+    | Protocol | **TCP** |
+    | Destination port | `22` |
+
+15. Select **Run diagnostic tests**. Confirm the result shows **Reachable** — traffic from `AppVnet` is flowing to `CoreServicesVnet` over the peering.
+
+### Verify private DNS resolution
+
+16. Now that `CoreServicesVM` is running and auto-registration is active, confirm that an A record has been created in the private zone. In the portal, navigate to **Private DNS zones → private.adventuretravel.com → Recordsets**. You should see `coreservicesvm` with an A record pointing to its private IP.
+
+17. Verify that `az104-06-vm0` in `AppVnet` can resolve the name (it can, because `AppVnet` is linked to the zone as a resolver). Run this from Cloud Shell:
+
+    ```bash
+    az vm run-command invoke \
+      --resource-group RG-Lab2 \
+      --name az104-06-vm0 \
+      --command-id RunShellScript \
+      --scripts "nslookup coreservicesvm.private.adventuretravel.com"
+    ```
+
+    Confirm the output resolves to `CoreServicesVM`'s private IP. This demonstrates that VMs in the peered `AppVnet` can use the private DNS zone to discover resources in `CoreServicesVnet` by name, without hardcoding IP addresses.
+
+**Key point:** Virtual network peering is non-transitive by default. If VNet A peers with VNet B, and VNet B peers with VNet C, VNet A cannot reach VNet C through VNet B. To achieve transitive routing you need either a hub VNet with a Network Virtual Appliance, or Azure Virtual WAN.
+
+---
+
+## Task 5: Configure an Azure Load Balancer
+
+Azure Load Balancer operates at Layer 4 (TCP/UDP) and distributes inbound traffic
+across backend virtual machines. The Standard SKU provides zone redundancy, SLA
+guarantees, and health probes — use it for all production workloads.
+
+The `AppVnet` and backend VMs (`az104-06-vm0` and `az104-06-vm1`) were already
+provisioned in Task 4. Confirm they are running before proceeding.
 
 ### Create the Load Balancer
 
-4. In the Azure portal, search for and select **Load balancers**, then **+ Create**.
+1. In the Azure portal, search for and select **Load balancers**, then **+ Create**.
 
-5. On the **Basics** tab:
+2. On the **Basics** tab:
 
    | Setting | Value |
    | --- | --- |
@@ -476,7 +493,7 @@ for Tasks 5 and 6. To keep within the lab timing, deploy the VMs using Cloud She
    | Type | **Public** |
    | Tier | **Regional** |
 
-6. Select **Next: Frontend IP configuration**, then **+ Add a frontend IP configuration**:
+3. Select **Next: Frontend IP configuration**, then **+ Add a frontend IP configuration**:
 
    | Setting | Value |
    | --- | --- |
@@ -490,7 +507,7 @@ for Tasks 5 and 6. To keep within the lab timing, deploy the VMs using Cloud She
 
    Select **Save**, then **Next: Backend pools**.
 
-7. Select **+ Add a backend pool**:
+4. Select **+ Add a backend pool**:
 
    | Setting | Value |
    | --- | --- |
@@ -500,11 +517,11 @@ for Tasks 5 and 6. To keep within the lab timing, deploy the VMs using Cloud She
 
    Select **+ Add** and add both `az104-06-vm0` and `az104-06-vm1`. Select **Add**, then **Save**.
 
-8. Leave **Inbound rules** and remaining tabs at defaults. Select **Review + create**, then **Create**. Wait for deployment.
+5. Leave **Inbound rules** and remaining tabs at defaults. Select **Review + create**, then **Create**. Wait for deployment.
 
 ### Add a load balancing rule
 
-9. Navigate to the deployed `az104-lb` resource. In the **Settings** blade, select **Load balancing rules**, then **+ Add**:
+6. Navigate to the deployed `az104-lb` resource. In the **Settings** blade, select **Load balancing rules**, then **+ Add**:
 
    | Setting | Value |
    | --- | --- |
@@ -525,11 +542,11 @@ for Tasks 5 and 6. To keep within the lab timing, deploy the VMs using Cloud She
 
 ### Test the Load Balancer
 
-10. On the **Frontend IP configuration** blade of `az104-lb`, copy the public IP address.
+7. On the **Frontend IP configuration** blade of `az104-lb`, copy the public IP address.
 
-11. Open a browser and navigate to `http://<frontend-ip-address>`. You should see **Hello World from az104-06-vm0** or **az104-06-vm1**.
+8. Open a browser and navigate to `http://<frontend-ip-address>`. You should see **Hello World from az104-06-vm0** or **az104-06-vm1**.
 
-12. Refresh the page several times (or use an InPrivate window). Confirm that responses alternate between both virtual machines — this demonstrates round-robin load distribution.
+9. Refresh the page several times (or use an InPrivate window). Confirm that responses alternate between both virtual machines — this demonstrates round-robin load distribution.
 
 **Key point:** The Standard Load Balancer is zone-redundant and SLA-backed. The Basic SKU is for dev/test only. Health probes monitor backend instance health — if a probe fails, the Load Balancer stops sending traffic to that instance until it recovers. Session persistence (sticky sessions) can be enabled if your application requires a client to always reach the same backend.
 
@@ -701,18 +718,22 @@ The Application Gateway requires a dedicated subnet of /27 or larger.
   outset — fixing this later requires tearing down and re-creating resources.
 
 - **NSGs** filter traffic at the subnet or NIC level using allow/deny rules evaluated
-  in priority order. **ASGs** group VMs logically so NSG rules can reference a set of
-  machines by name instead of by IP address, reducing management overhead as the
-  environment scales.
+  in priority order. Attaching an NSG to a subnet enforces rules on all traffic entering
+  or leaving that subnet. In this lab, the NSG on `DatabaseSubnet` allows only `AppVnet`
+  traffic on port 1433, blocking all other inbound access and outbound internet egress.
 
 - **Azure DNS** provides both public and private DNS hosting. Public zones are
-  internet-accessible; private zones are scoped to specific virtual networks. Use
-  private DNS zones to give Azure resources human-readable names without exposing
-  them publicly.
+  internet-accessible; private zones are scoped to specific virtual networks. Enabling
+  auto-registration on a VNet link means Azure automatically creates and maintains DNS
+  records for every VM in that VNet — no manual A record management needed. Linking
+  additional VNets as resolvers (without auto-registration) lets peered VMs look up
+  those records across VNet boundaries.
 
 - **Virtual network peering** connects two VNets directly over the Microsoft backbone
-  with low latency. Peering is non-transitive — hub-and-spoke topologies require
-  either a Network Virtual Appliance or Azure Virtual WAN for transitive routing.
+  with low latency. In this lab, peering `AppVnet` to `CoreServicesVnet` gives the
+  application tier direct access to the database subnet without routing over the internet.
+  Peering is non-transitive — hub-and-spoke topologies require either a Network Virtual
+  Appliance or Azure Virtual WAN for transitive routing.
 
 - **Azure Load Balancer (Standard)** distributes TCP/UDP traffic at Layer 4 using
   health probes and configurable rules. Use it for VM-level traffic distribution
