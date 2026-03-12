@@ -1,0 +1,572 @@
+---
+lab:
+  title: 'Lab Day 3: Compute'
+  module: 'Advanced Azure Bootcamp – Day 3'
+---
+
+# Lab Day 3 – Compute: Fundamentals & Selection
+
+## Lab Introduction
+
+In this lab you explore the four primary Azure compute surfaces and examine the
+cost controls available on each. You will work through the following tasks:
+
+- Deploy a virtual machine and apply cost-saving options
+- Build and invoke a serverless Azure Function
+- Deploy a web application using Azure App Service
+- Run a containerised workload with Azure Container Apps
+
+## Pre-requisites
+
+- An Azure subscription
+- A resource group named **RG-Lab3**
+- Owner rights at the resource group level
+- A local terminal (Bash or PowerShell) or Azure Cloud Shell
+
+## Estimated Timing: 90 minutes
+
+## Lab Scenario
+
+Your organisation wants to evaluate the four main compute surfaces before
+committing to a long-term architecture. As the cloud practitioner leading the
+proof-of-concept, you will deploy one representative workload on each surface,
+observe the operational model, and identify the relevant cost levers. At the
+end of the lab you will have four running services and a clear picture of the
+trade-offs between them.
+
+## Architecture Overview
+
+```
+Subscription
+└── RG-Lab3
+    ├── lab3-vm  (Standard_B2s, Ubuntu 22.04)
+    │   └── Auto-shutdown configured
+    │
+    ├── lab3-funcapp  (Consumption Plan, Node.js 20)
+    │   └── HttpTriggerFunction  ← HTTP GET → JSON response
+    │
+    ├── lab3-appserviceplan  (B1, Linux)
+    │   └── lab3-webapp  ← public URL → sample page
+    │
+    └── lab3-env  (Container Apps Environment)
+        └── lab3-containerapp
+              image: mcr.microsoft.com/azuredocs/containerapps-helloworld
+```
+
+## Job Skills
+
+- Task 1: Deploy a virtual machine and explore cost-saving options
+- Task 2: Create and invoke a serverless Azure Function
+- Task 3: Deploy a web application with Azure App Service
+- Task 4: Run a containerised workload with Azure Container Apps
+
+---
+
+## Task 1: Deploy a Virtual Machine and Explore Cost-Saving Options
+
+Azure Virtual Machines give you full control over the operating system, runtime,
+and configuration — at the cost of the most operational overhead of any compute
+surface. In this task you deploy a small Linux VM, then walk through the key
+cost levers available before and after deployment.
+
+> **Design note:** VMs are most appropriate when you need a specific OS version,
+> must run licensed software, require persistent local storage, or need to lift and
+> shift an existing workload without modification. For greenfield applications,
+> evaluate the higher-level services in Tasks 2–4 first.
+
+### Create the virtual machine
+
+1. Sign in to the [Azure portal](https://portal.azure.com).
+
+2. Search for and select **Virtual machines**, then select **+ Create → Azure virtual machine**.
+
+3. On the **Basics** tab:
+
+   | Setting | Value |
+   | --- | --- |
+   | Resource group | **RG-Lab3** |
+   | Virtual machine name | `lab3-vm` |
+   | Region | **Australia East** (keep consistent throughout the lab) |
+   | Availability options | **No infrastructure redundancy required** |
+   | Security type | **Standard** |
+   | Image | **Ubuntu Server 22.04 LTS – x64 Gen2** |
+   | VM architecture | **x64** |
+   | Size | Select **See all sizes** → search `B2s` → choose **Standard_B2s** |
+
+   > **Why B-series?** B-series (burstable) VMs accumulate CPU credits when idle
+   > and spend them during bursts. They are significantly cheaper than D-series for
+   > workloads with low average CPU but occasional spikes — dev/test, light web
+   > servers, and CI agents are ideal candidates.
+
+4. Under **Administrator account**, choose **Password** and enter a username and
+   strong password. Note both — you will need them later.
+
+5. Under **Inbound port rules**, set **Public inbound ports** to **None**.
+   You will access the VM through a managed channel (Bastion or serial console)
+   rather than exposing SSH directly.
+
+6. Select the **Disks** tab. Note the **OS disk type** dropdown — changing from
+   **Premium SSD** to **Standard SSD** or **Standard HDD** reduces storage cost
+   for workloads that do not require high IOPS.
+
+7. Select the **Management** tab. Locate **Auto-shutdown** and enable it:
+
+   | Setting | Value |
+   | --- | --- |
+   | Enable auto-shutdown | **On** |
+   | Shutdown time | **19:00:00** |
+   | Time zone | Your local time zone |
+   | Notification before shutdown | **Off** (or configure an email) |
+
+   > **Why auto-shutdown?** Forgotten VMs are one of the largest sources of
+   > wasted cloud spend. Auto-shutdown guarantees a VM is stopped (deallocated)
+   > each evening so you are not charged compute while it sits idle overnight.
+   > Compute charges stop when a VM is **deallocated** — not merely **stopped**
+   > from within the OS, which keeps the VM allocated and still incurs cost.
+
+8. Select **Review + create**, then **Create**. Continue with the cost exploration
+   steps below while the VM deploys (~2 minutes).
+
+### Explore cost-saving options
+
+9.  While the deployment runs, open a new browser tab and navigate to the
+    [Azure Pricing Calculator](https://azure.microsoft.com/en-au/pricing/calculator/).
+    Add a **Virtual Machines** product and compare the monthly cost of
+    **Standard_B2s** on Pay-As-You-Go versus a **1-Year Reserved** commitment.
+    Note the approximate savings percentage — typically 30–40 %.
+
+    > **Reserved Instances** require a 1- or 3-year upfront or monthly commitment.
+    > They are ideal for any VM that will run continuously — production web servers,
+    > databases, and domain controllers. Reserved capacity is applied automatically
+    > to matching running VMs in your subscription; you do not change the VM itself.
+
+10. Return to the Azure portal. Search for **Cost Management + Billing**, then
+    select **Reservations → + Add**. Search for **Virtual machine**, and select
+    it. On the recommendation page, note how Azure calculates a
+    recommended reservation based on your last 7 or 30 days of usage and projects
+    the savings. **Do not purchase** — observe only.
+
+11. Navigate back to **Virtual machines** and wait for `lab3-vm` to show
+    **Running**.
+
+12. Select `lab3-vm`. On the **Overview** blade, select **Stop** to deallocate
+    the VM. Confirm the shutdown. Once the status shows **Stopped (deallocated)**,
+    observe on the **Size** blade that you can resize a deallocated VM to any SKU
+    with no data loss.
+
+    > **Spot VMs** are another cost option — they use spare Azure capacity at up
+    > to a 90 % discount but can be evicted with 30 seconds notice. They suit
+    > fault-tolerant batch jobs, rendering, and CI pipelines but are not
+    > appropriate for stateful or user-facing workloads.
+
+    > **Azure Hybrid Benefit** (shown on the Windows image Basics tab) lets you
+    > bring existing Windows Server or SQL Server licences to Azure, eliminating
+    > the software licence component of the VM cost — which can represent half
+    > the per-hour price for a Windows VM.
+
+13. Restart the VM by selecting **Start** on the **Overview** blade. Leave it
+    running — you do not need to connect to it for this lab.
+
+**Key point:** The total cost of a VM has several independent levers — SKU
+selection, OS disk tier, commitment model (PAYG vs Reserved vs Spot), licensing
+(Azure Hybrid Benefit), and operational discipline (auto-shutdown, right-sizing).
+Addressing all of them together typically produces 50–70 % savings over an
+unoptimised Pay-As-You-Go deployment.
+
+---
+
+## Task 2: Create and Invoke a Serverless Azure Function
+
+Azure Functions is a serverless compute service — you deploy only your code, and
+Azure handles provisioning, scaling, and availability. The **Consumption plan**
+charges only for executions (the first 1 million per month are free) and scales
+to zero when idle, eliminating the concept of an "idle VM".
+
+### Create the Function App
+
+1. Search for and select **Function App**, then select **+ Create → Consumption**.
+
+2. On the **Basics** tab:
+
+   | Setting | Value |
+   | --- | --- |
+   | Resource group | **RG-Lab3** |
+   | Function App name | `lab3-funcapp-<your-initials>` (must be globally unique) |
+   | Runtime stack | **Node.js** |
+   | Version | **20 LTS** |
+   | Region | **Australia East** |
+   | Operating system | **Linux** |
+
+3. Select **Review + create**, then **Create**. The deployment provisions a
+   Storage Account automatically — Functions requires storage for state, logs,
+   and zip-deployment artefacts.
+
+4. Select **Go to resource** when the deployment completes.
+
+### Create an HTTP-triggered function
+
+5. In the **Functions** blade, select **Create function**.
+
+6. In **Select a template**, choose **HTTP trigger**, then select **Next**.
+
+7. Configure the function:
+
+   | Setting | Value |
+   | --- | --- |
+   | Function name | `HttpTriggerFunction` |
+   | Authorization level | **Anonymous** |
+
+   Select **Create**.
+
+8. Once created, select the function, then select **Code + Test** in the left menu.
+
+9. Replace the entire contents of `index.js` with the following code:
+
+   ```javascript
+   const { app } = require('@azure/functions');
+
+   app.http('HttpTriggerFunction', {
+       methods: ['GET', 'POST'],
+       authLevel: 'anonymous',
+       handler: async (request, context) => {
+           const name = request.query.get('name') || 'World';
+           return {
+               body: JSON.stringify({
+                   message: `Hello, ${name}! This response came from an Azure Function.`,
+                   timestamp: new Date().toISOString(),
+                   trigger: 'HTTP'
+               }),
+               headers: { 'Content-Type': 'application/json' }
+           };
+       }
+   });
+   ```
+
+10. Select **Save**. Azure will show a green **Saved** indicator.
+
+### Test the function
+
+11. Select **Test/Run**. On the **Input** tab:
+
+    | Setting | Value |
+    | --- | --- |
+    | HTTP method | **GET** |
+    | Query | Add parameter: key `name`, value `MYOB` |
+
+12. Select **Run**. On the **Output** tab, confirm you receive an HTTP 200 response
+    with a JSON body containing your name.
+
+13. Select **Get function URL** (top of the **Code + Test** blade). Copy the URL.
+    Open a browser and navigate to `<function-url>&name=MYOB`. Confirm identical
+    output is returned over the public internet.
+
+14. Navigate back to the Function App overview. Select **App Service plan** and
+    note it shows the **Consumption plan**. In the **Scale out (App Service plan)**
+    blade, observe that Azure manages all scaling decisions automatically — there
+    are no scale rules to configure.
+
+**Key point:** The Consumption plan is genuinely pay-per-execution with automatic
+scaling from zero. The **Premium plan** adds VNet integration, always-warm
+instances, and more powerful SKUs at a fixed hourly cost — useful for Functions
+that need network isolation or sub-second cold-start times. **App Service plan**
+hosting runs Functions on dedicated compute alongside your web apps — suitable
+when you already have spare App Service capacity.
+
+---
+
+## Task 3: Deploy a Web Application with Azure App Service
+
+Azure App Service is a fully managed platform for hosting web applications,
+REST APIs, and mobile backends. Unlike Functions, App Service maintains a
+persistent process — it suits long-running web servers, background workers,
+and applications that manage their own state in memory.
+
+### Create the App Service Plan and Web App
+
+1. Search for and select **App Services**, then select **+ Create → Web App**.
+
+2. On the **Basics** tab:
+
+   | Setting | Value |
+   | --- | --- |
+   | Resource group | **RG-Lab3** |
+   | Name | `lab3-webapp-<your-initials>` (must be globally unique) |
+   | Publish | **Container** |
+   | Operating system | **Linux** |
+   | Region | **Australia East** |
+
+3. Under **Pricing plans**, select **Create new** and name the plan
+   `lab3-appserviceplan`. Choose the **Basic B1** SKU (1 vCore, 1.75 GB RAM).
+
+   > **Why not Free or Shared?** Free (F1) and Shared (D1) tiers run on shared
+   > infrastructure with no SLA and no custom domain HTTPS. B1 is the lowest tier
+   > that provides a dedicated compute instance and is suitable for light production
+   > workloads. Standard and Premium tiers add autoscale, deployment slots, and
+   > VNet integration.
+
+4. Select the **Container** tab:
+
+   | Setting | Value |
+   | --- | --- |
+   | Image source | **Other container registries** |
+   | Image and tag | `mcr.microsoft.com/azuredocs/containerapps-helloworld:latest` |
+
+5. Select **Review + create**, then **Create**. Wait for the deployment to succeed,
+   then select **Go to resource**.
+
+### Explore the App Service
+
+6. On the **Overview** blade, select the **Default domain** link (ending in
+   `.azurewebsites.net`). A browser tab opens and, after a brief startup, shows
+   the Hello World page. Note the URL — this is a free, TLS-terminated subdomain
+   provided automatically by Azure.
+
+7. Navigate to **Settings → Scale out (App Service plan)**. Select
+   **Automatic (preview)** or **Manual scale**. If using manual scale, observe
+   that you can increase the instance count to a maximum allowed by your SKU.
+
+   > **Key difference from Functions:** App Service autoscaling is configured by
+   > you — you define metric thresholds (CPU %, request count, queue depth) and
+   > Azure adds or removes instances accordingly. Functions on the Consumption plan
+   > auto-scale without any configuration.
+
+8. Navigate to **Deployment → Deployment slots**. Note that deployment slots
+   (staging, QA, etc.) are available from the **Standard S1** tier upward.
+   Slots allow you to deploy and warm up a new version before swapping it into
+   production with zero downtime — a critical feature for production web apps.
+
+   > This feature is visible but greyed out on B1. Note the SKU upgrade path for
+   > a future production deployment.
+
+9. Navigate to **Monitoring → Log stream**. Within a few seconds you should see
+   live stdout/stderr from the running container. This is the simplest form of
+   application observability — no agents required for basic log tailing.
+
+10. Navigate to **Settings → Configuration → General settings** and review the
+    available runtime stacks (Node.js, Python, .NET, Java, PHP, Ruby, custom
+    containers). Switching the runtime requires only a configuration change and
+    a restart — no infrastructure change.
+
+**Key point:** App Service abstracts the OS and runtime from you, but you retain
+full control over your application code, startup commands, and environment
+variables. It sits between Functions (zero infrastructure concern, event-driven)
+and VMs (full OS control, maximum flexibility). Use App Service for traditional
+web applications and APIs that run continuously and need persistent HTTP routing.
+
+---
+
+## Task 4: Run a Containerised Workload with Azure Container Apps
+
+Azure Container Apps is a serverless container platform built on top of
+Kubernetes and KEDA (Kubernetes Event-Driven Autoscaling). You deploy container
+images directly — Azure manages the underlying cluster, node pools, and scaling.
+Unlike App Service, Container Apps supports multiple containers per app
+(sidecars), DAPR, and scale-to-zero for HTTP and event-driven workloads.
+
+### Create the Container Apps Environment
+
+A Container Apps Environment is the shared networking and logging boundary for
+one or more Container Apps — analogous to a Kubernetes namespace combined with
+an AKS cluster.
+
+1. Search for and select **Container Apps**, then select **+ Create**.
+
+2. On the **Basics** tab:
+
+   | Setting | Value |
+   | --- | --- |
+   | Resource group | **RG-Lab3** |
+   | Container app name | `lab3-containerapp` |
+   | Region | **Australia East** |
+
+3. Under **Container Apps Environment**, select **Create new**:
+
+   | Setting | Value |
+   | --- | --- |
+   | Environment name | `lab3-env` |
+   | Zone redundancy | **Disabled** (lab purposes) |
+
+   Select **Create**, then wait for the environment validation to pass.
+
+4. Select the **Container** tab:
+
+   | Setting | Value |
+   | --- | --- |
+   | Use quickstart image | **Unchecked** |
+   | Name | `hello-world` |
+   | Image source | **Docker Hub or other registries** |
+   | Image and tag | `mcr.microsoft.com/azuredocs/containerapps-helloworld:latest` |
+   | CPU and Memory | **0.25 CPU cores, 0.5 Gi memory** |
+
+5. Select the **Ingress** tab:
+
+   | Setting | Value |
+   | --- | --- |
+   | Ingress | **Enabled** |
+   | Ingress traffic | **Accepting traffic from anywhere** |
+   | Ingress type | **HTTP** |
+   | Target port | `80` |
+
+6. Select **Review + create**, then **Create**. Wait for the deployment
+   (~2 minutes).
+
+### Invoke and scale the container
+
+7. Once deployed, select **Go to resource**. On the **Overview** blade, select
+   the **Application URL** link. Confirm the Hello World page loads over HTTPS —
+   the TLS certificate is provisioned and managed automatically by Azure.
+
+8. Navigate to **Settings → Scale**. Review the scaling configuration:
+
+   | Trigger type | Default value | Notes |
+   | --- | --- | --- |
+   | Min replicas | `0` | Scale to zero when idle — no idle cost |
+   | Max replicas | `10` | Upper bound on horizontal scaling |
+   | Concurrent requests | `10` per replica | HTTP trigger threshold |
+
+   > **Scale to zero** is the defining Container Apps cost behaviour. When no
+   > traffic arrives for a configurable period, all replicas are removed and you
+   > pay nothing for compute. The cold-start latency on first request is typically
+   > 1–3 seconds for a small container, which is acceptable for many workloads.
+
+9. Navigate to **Application → Revisions and replicas**. Note that Container Apps
+   uses a **revision model** — every deployment creates a new immutable revision.
+   Traffic can be split across revisions (e.g., 90 % stable / 10 % canary) using
+   the **Traffic weight** sliders. This is a built-in blue/green and canary
+   deployment capability without any additional infrastructure.
+
+10. Select **Create new revision** and change only the **Container image tag** to
+    `latest` (no actual change). Confirm a new revision is created and immediately
+    receives 100 % of traffic. This demonstrates the zero-downtime deployment
+    workflow.
+
+11. In Cloud Shell (Bash), use the Azure CLI to inspect the running container:
+
+    ```bash
+    az containerapp show \
+      --resource-group RG-Lab3 \
+      --name lab3-containerapp \
+      --query "{url:properties.configuration.ingress.fqdn, \
+                replicas:properties.template.scale.maxReplicas, \
+                image:properties.template.containers[0].image}" \
+      -o table
+    ```
+
+    Confirm the output matches the values you configured in the portal.
+
+12. Generate a small load burst to observe scaling. From Cloud Shell:
+
+    ```bash
+    APP_URL=$(az containerapp show \
+      --resource-group RG-Lab3 \
+      --name lab3-containerapp \
+      --query "properties.configuration.ingress.fqdn" -o tsv)
+
+    for i in {1..30}; do curl -s "https://${APP_URL}" -o /dev/null & done
+    wait
+    echo "Done"
+    ```
+
+    Navigate back to **Revisions and replicas** and refresh after 20–30 seconds.
+    You may observe the replica count increase temporarily beyond 1 as Container
+    Apps responds to the burst.
+
+**Key point:** Container Apps removes Kubernetes operational complexity while
+preserving container portability. You bring a container image from any registry;
+Azure handles cluster management, patching, and scaling. If you need full
+Kubernetes control (custom operators, node pool configuration, GPU nodes,
+admission webhooks), use AKS instead — but for the majority of containerised
+web services and APIs, Container Apps provides the right trade-off.
+
+---
+
+## Cleanup
+
+**Remove all lab resources to avoid ongoing charges.**
+
+1. In the Azure portal, navigate to **RG-Lab3**.
+
+2. Select **Delete resource group**.
+
+3. Copy and paste the resource group name `RG-Lab3` to confirm, then select **Delete**.
+
+   > Alternatively, from Cloud Shell:
+   > ```bash
+   > az group delete --name RG-Lab3 --yes --no-wait
+   > ```
+
+---
+
+## Compute Selection Summary
+
+Use this table as a quick reference when choosing a compute surface:
+
+| Criterion | Virtual Machine | Azure Functions | App Service | Container Apps |
+| --- | --- | --- | --- | --- |
+| **Unit of deployment** | OS image | Function code | Application code / container | Container image |
+| **OS control** | Full | None | None | None |
+| **Idle cost** | Yes (unless deallocated) | No (Consumption) | Yes | No (scale-to-zero) |
+| **Cold start** | None (always running) | Yes (~0.5–2 s) | None (warm) | Yes (~1–3 s) |
+| **Scaling model** | Manual / VMSS | Automatic | Manual rules or automatic | Automatic (KEDA) |
+| **Max runtime** | Unlimited | 10 min (Consumption) | Unlimited | Unlimited |
+| **Operational overhead** | High | Very low | Low | Low |
+| **Best for** | Lift-and-shift, licensed software | Event handlers, short tasks | Traditional web apps & APIs | Microservices, containerised APIs |
+
+---
+
+## Key Takeaways
+
+- **Virtual machines** offer the most flexibility and the most operational
+  overhead. Cost is reduced through right-sizing (B-series for burstable
+  workloads), disk tier selection, Reserved Instances for steady-state VMs,
+  Spot for interruptible batch jobs, Azure Hybrid Benefit for Windows/SQL
+  licences, and auto-shutdown for non-production environments.
+
+- **Azure Functions (Consumption plan)** is the lowest-cost option for
+  infrequent, event-driven workloads — the first million executions per month
+  are free. There is no infrastructure to manage and scaling is fully automatic.
+  The trade-off is cold starts and a maximum execution duration of 10 minutes.
+
+- **App Service** sits between serverless and VMs. The platform manages the OS
+  and runtime; you manage your application. It is best suited to traditional
+  web applications and REST APIs that run continuously. Key production features —
+  deployment slots, autoscale, custom domains with managed certificates —  are
+  available from the Standard tier upward.
+
+- **Azure Container Apps** brings the operational simplicity of App Service to
+  containerised workloads. Scale-to-zero, built-in revision traffic splitting,
+  DAPR support, and KEDA-based event-driven autoscaling make it the default
+  choice for new containerised services when full Kubernetes control is not
+  required.
+
+---
+
+## What This Lab Did Not Cover
+
+The following topics are relevant to the Day 3 curriculum but were scoped out
+to keep the lab within 90 minutes:
+
+| Topic | Why it matters | Where to go next |
+| --- | --- | --- |
+| **VM Scale Sets (VMSS)** | Horizontal auto-scaling of identical VMs — the VM equivalent of App Service autoscale. Required for large-scale stateless VM workloads. | Azure VMSS documentation |
+| **Azure Container Instances (ACI)** | Lighter-weight one-off container runs with no environment or revision model. Simpler than Container Apps for single-container batch jobs. | ACI quickstart |
+| **Autoscale rules (App Service)** | Custom CPU / memory / queue-depth thresholds that trigger scale-out on App Service, as opposed to the automatic model in Functions and Container Apps. | App Service autoscale docs |
+| **Azure Kubernetes Service (AKS)** | Full Kubernetes control plane — custom operators, node pool types, GPU nodes. Covered in Day 5. | Day 5 Lab |
+| **Azure Batch** | Managed large-scale parallel and HPC compute — job scheduling across hundreds of VMs. | Azure Batch overview |
+| **Deployment slots (App Service)** | Zero-downtime deployments via staging → production swap. Requires Standard S1 or above. | App Service deployment slots docs |
+
+---
+
+## Resources
+
+- [Azure Virtual Machines documentation](https://learn.microsoft.com/en-us/azure/virtual-machines/)
+- [Azure Reserved VM Instances](https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/save-compute-costs-reservations)
+- [Azure Spot VMs](https://learn.microsoft.com/en-us/azure/virtual-machines/spot-vms)
+- [Azure Hybrid Benefit](https://learn.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing)
+- [Azure Functions overview](https://learn.microsoft.com/en-us/azure/azure-functions/functions-overview)
+- [Azure Functions hosting plans](https://learn.microsoft.com/en-us/azure/azure-functions/functions-scale)
+- [Azure App Service overview](https://learn.microsoft.com/en-us/azure/app-service/overview)
+- [App Service deployment slots](https://learn.microsoft.com/en-us/azure/app-service/deploy-staging-slots)
+- [Azure Container Apps overview](https://learn.microsoft.com/en-us/azure/container-apps/overview)
+- [KEDA – Kubernetes Event-Driven Autoscaling](https://keda.sh/)
+- [Azure Container Apps vs AKS](https://learn.microsoft.com/en-us/azure/container-apps/compare-options)
