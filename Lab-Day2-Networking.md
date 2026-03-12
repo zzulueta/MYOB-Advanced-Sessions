@@ -117,7 +117,7 @@ without ordering dependencies.
 
 ### Create the AppVnet
 
-7. Select **+ Create** again.
+7. Search for and select Virtual Networks. Select **+ Create** again.
 
 8. On the **Basics** tab:
 
@@ -217,7 +217,7 @@ default rules, and outbound internet access is explicitly blocked.
 
 11. Select **Add**.
 
-**Key point:** NSG rules are evaluated in priority order — lowest number is processed first. The default `AllowInternetOutBound` rule has priority 65001, so the `DenyInternetOutbound` rule at 4096 overrides it. By attaching the NSG directly to `DatabaseSubnet`, the rules apply to all traffic entering or leaving that subnet regardless of which VM it targets.
+**Key point:** NSG rules are evaluated in priority order — lowest number is processed first. The default `AllowInternetOutBound` rule has priority 65001, so the `DenyInternetOutbound` rule at 4096 overrides it. By attaching the NSG directly to `DatabaseSubnet`, the rules apply to all traffic entering or leaving that subnet.
 
 ---
 
@@ -287,7 +287,7 @@ zones provide name resolution exclusively within virtual networks — no public 
     | Virtual network | **CoreServicesVnet** |
     | Enable auto registration | **Checked** |
 
-    Select **OK** and wait for the link status to show **Completed**.
+    Select **Create** and wait for the link status to show **Completed**.
 
 13. Add a second link so `AppVnet` VMs can also resolve the private zone. Select **+ Add** again:
 
@@ -297,7 +297,7 @@ zones provide name resolution exclusively within virtual networks — no public 
     | Virtual network | **AppVnet** |
     | Enable auto registration | Leave unchecked |
 
-    Select **OK** and wait for the link status to show **Completed**.
+    Select **Create** and wait for the link status to show **Completed**.
 
     > **Note:** Auto-registration is only enabled for `CoreServicesVnet`. When `CoreServicesVM` is deployed in Task 4, Azure will automatically create an A record `coreservicesvm.private.adventuretravel.com` pointing to its private IP. `AppVnet` is linked as a resolver only — its VMs can look up the zone but won't have records auto-created.
 
@@ -480,7 +480,7 @@ provisioned in Task 4. Confirm they are running before proceeding.
 
 ### Create the Load Balancer
 
-1. In the Azure portal, search for and select **Load balancers**, then **+ Create**.
+1. In the Azure portal, search for and select **Load balancers**, then **+ Create Standard Load Balancer**.
 
 2. On the **Basics** tab:
 
