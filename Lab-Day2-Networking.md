@@ -258,7 +258,7 @@ zones provide name resolution exclusively within virtual networks — no public 
    | Property | Value |
    | --- | --- |
    | Resource group | **RG-Lab2** |
-   | Name | `contoso.com` |
+   | Name | `adventuretravel.com` |
    | Region | **Australia East** |
 
 3. Select **Review + create**, then **Create**. Select **Go to resource**.
@@ -281,7 +281,7 @@ zones provide name resolution exclusively within virtual networks — no public 
 7. Open a local command prompt (Windows) or terminal (macOS/Linux) and run the following, replacing `<name server>` with one of the name server addresses from step 4:
 
    ```sh
-   nslookup www.contoso.com <name server>
+   nslookup www.adventuretravel.com <name server>
    ```
 
    Verify the response resolves to `10.20.10.4`. This confirms the public DNS zone is working correctly.
@@ -343,15 +343,17 @@ Peered networks appear as one for connectivity purposes.
 
    | Parameter | Value |
    | --- | --- |
-   | **This virtual network** | |
-   | Peering link name | `CoreServicesVnet-to-ManufacturingVnet` |
-   | Allow 'CoreServicesVnet' to access 'ManufacturingVnet' | Selected (default) |
-   | Allow 'CoreServicesVnet' to receive forwarded traffic from 'ManufacturingVnet' | Selected |
-   | **Remote virtual network** | |
+   | **Remote virtual network summary** | |
    | Peering link name | `ManufacturingVnet-to-CoreServicesVnet` |
    | Virtual network | **ManufacturingVnet (RG-Lab2)** |
+   | **Remote virtual network peering settings** | |
    | Allow 'ManufacturingVnet' to access 'CoreServicesVnet' | Selected (default) |
    | Allow 'ManufacturingVnet' to receive forwarded traffic from 'CoreServicesVnet' | Selected |
+   | **Local virtual network summary** | |
+   | Peering link name | `CoreServicesVnet-to-ManufacturingVnet` |
+   | **Local virtual network peering settings** | |
+   | Allow 'CoreServicesVnet' to access 'ManufacturingVnet' | Selected (default) |
+   | Allow 'CoreServicesVnet' to receive forwarded traffic from 'ManufacturingVnet' | Selected |
 
 4. Select **Add** and wait a few seconds.
 
