@@ -49,8 +49,8 @@ You have been tasked with:
 Subscription
 └── RG-Lab2
     ├── CoreServicesVnet (10.20.0.0/16)
-    │   ├── SharedServicesSubnet (10.20.10.0/24)  ← NSG applied
-    │   └── DatabaseSubnet (10.20.20.0/24)
+    │   ├── SharedServicesSubnet (10.20.10.0/24)
+    │   └── DatabaseSubnet (10.20.20.0/24)  ← NSG applied
     │
     ├── AppVnet (10.60.0.0/16)
     │   ├── BackendSubnet1 (10.60.1.0/24)  ← vm0
