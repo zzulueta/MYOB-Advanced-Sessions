@@ -141,17 +141,17 @@ cost levers available before and after deployment.
     > to matching running VMs in your subscription; you do not change the VM itself.
 
 10. Return to the Azure portal. Search for **Cost Management + Billing**, then
-    select **Reservations → + Add**. Search for **Virtual machine**, and select
-    it. On the recommendation page, note how Azure calculates a
+    select **Reservations + Hybrid Benefit→ + Add Reservations**. Search for **Virtual machine**, and select
+    it. On the recommendation page, Azure calculates a
     recommended reservation based on your last 7 or 30 days of usage and projects
     the savings. **Do not purchase** — observe only.
 
 11. Navigate back to **Virtual machines** and wait for `lab3-vm` to show
-    **Running**.
+    **Running** status.
 
 12. Select `lab3-vm`. On the **Overview** blade, select **Stop** to deallocate
     the VM. Confirm the shutdown. Once the status shows **Stopped (deallocated)**,
-    observe on the **Size** blade that you can resize a deallocated VM to any SKU
+    observe on the **Availability + scale -> Size** blade that you can resize a deallocated VM to any SKU
     with no data loss.
 
     > **Spot VMs** are another cost option — they use spare Azure capacity at up

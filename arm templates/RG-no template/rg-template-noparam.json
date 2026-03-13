@@ -1,0 +1,18 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "resources": [
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2022-09-01",
+            "name": "armtest",
+            "location": "australiaeast",
+            "tags": {
+                "BusinessUnit": "engineering",
+                "CostCenter": "CC-1234",
+                "Environment": "Dev",
+                "Owner": "platform-team"
+            }
+        }
+    ]
+}

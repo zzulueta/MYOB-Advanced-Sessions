@@ -1,0 +1,24 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceGroupName": {
+            "value": "armtest"
+        },
+        "location": {
+            "value": "australiaeast"
+        },
+        "tagBusinessUnit": {
+            "value": "engineering"
+        },
+        "tagCostCenter": {
+            "value": "CC-1234"
+        },
+        "tagEnvironment": {
+            "value": "Dev"
+        },
+        "tagOwner": {
+            "value": "platform-team"
+        }
+    }
+}

@@ -1,0 +1,90 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+
+    "parameters": {
+        "storageAccountName": {
+            "type": "string",
+            "metadata": {
+                "description": "Base name for the storage account."
+            }
+        },
+        "environment": {
+            "type": "string",
+            "defaultValue": "dev",
+            "allowedValues": [ "dev", "test", "prod" ],
+            "metadata": {
+                "description": "Deployment environment."
+            }
+        },
+        "costCenter": {
+            "type": "string",
+            "metadata": {
+                "description": "Cost center for billing."
+            }
+        },
+        "department": {
+            "type": "string",
+            "metadata": {
+                "description": "Department that owns this resource."
+            }
+        }
+    },
+
+    "variables": {
+        "storageSku": "[if(equals(parameters('environment'), 'prod'), 'Standard_GRS', 'Standard_LRS')]",
+        "fullStorageName": "[concat(parameters('storageAccountName'), parameters('environment'))]"
+    },
+
+    "functions": [
+        {
+            "namespace": "myOrg",
+            "members": {
+                "uniqueStorageName": {
+                    "parameters": [
+                        {
+                            "name": "baseName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[toLower(concat(parameters('baseName'), uniqueString(resourceGroup().id)))]"
+                    }
+                }
+            }
+        }
+    ],
+
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-01-01",
+            "name": "[myOrg.uniqueStorageName(variables('fullStorageName'))]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[variables('storageSku')]"
+            },
+            "kind": "StorageV2",
+            "tags": {
+                "Environment": "[parameters('environment')]",
+                "CostCenter": "[parameters('costCenter')]",
+                "Department": "[parameters('department')]"
+            },
+            "properties": {
+                "accessTier": "Hot"
+            }
+        }
+    ],
+
+    "outputs": {
+        "storageAccountName": {
+            "type": "string",
+            "value": "[myOrg.uniqueStorageName(variables('fullStorageName'))]"
+        },
+        "storageAccountId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Storage/storageAccounts', myOrg.uniqueStorageName(variables('fullStorageName')))]"
+        }
+    }
+}
