@@ -591,6 +591,129 @@ to keep the lab within 90 minutes:
 
 ---
 
+## Optional Lab: Deploy a Virtual Machine Scale Set (VMSS)
+
+This optional task extends Task 1 by replacing the single VM with a **Virtual
+Machine Scale Set** — the native Azure mechanism for horizontally scaling
+identical VMs. VMSS is appropriate when your workload requires more compute
+than a single VM can provide, and you want Azure to automatically add or remove
+instances based on demand.
+
+> **Pre-requisite:** Complete Task 1 first. `lab3-vm` should be running in
+> **RG-Lab3**.
+
+### Create the Scale Set
+
+1. Search for and select **Virtual machine scale sets**, then select **+ Create**.
+
+2. On the **Basics** tab:
+
+   | Setting | Value |
+   | --- | --- |
+   | Resource group | **RG-Lab3** |
+   | Virtual machine scale set name | `lab3-vmss` |
+   | Region | **Australia East** |
+   | Availability zone | **None** (lab purposes) |
+   | Orchestration mode | **Uniform** |
+   | Security type | **Standard** |
+   | Image | **Ubuntu Server 24.04 LTS – x64 Gen2** |
+   | VM architecture | **x64** |
+   | Size | **Standard_B2s_v2** (2 vCPUs, 8 GiB) |
+
+3. Note the **Instance count** field at the top of the page — set it to `2`.
+   Optionally select **Configure scaling options** to review the **Scaling configuration** panel:
+
+   - **Predictive autoscaling** — uses ML to forecast demand and scale ahead of time (leave unchecked for this lab)
+   - **Scale-In policy** — controls which instance is deleted first during a scale-in (leave as **Default**)
+
+   Select **Save** (or **Cancel**), then close the panel.
+
+4. Under **Administrator account**, choose **Password** and enter a username and
+   strong password.
+
+5. Select **Review + create**, then **Create**. Wait for the deployment (~3 minutes).
+
+### Explore the Scale Set
+
+6. Select **Go to resource**. On the **Overview** blade, note the **Instance count**
+   showing 2 running instances. Each instance has its own VM resource but is
+   managed as a single unit through the scale set.
+
+7. Navigate to **Availability + scale → Scaling** in the left nav. Select **Custom autoscale**. Under the **Default** scale condition:
+
+   - Change **Scale mode** from *Scale to a specific instance count* to **Scale based on a metric**.
+   - Set **Minimum** to `1`, **Maximum** to `5`, **Default** to `2`.
+   - Select **+ Add a rule** and configure a scale-out rule:
+
+     | Setting | Value |
+     | --- | --- |
+     | Metric name | **Percentage CPU** |
+     | Operator | **Greater than** |
+     | Threshold | `75` % |
+     | Action | **Increase count by** `1` |
+
+   - Select **+ Add a rule** again and configure a scale-in rule (CPU **Less than** `25` %, **Decrease count by** `1`).
+   - Select **Save**.
+
+   Select **Run history** to see a log of any scale events (empty for a new scale set).
+
+8. Navigate to **Instances** in the left nav to see the individual VMs in the scale set. Note the columns:
+   - **Status** — running state of each instance
+   - **Provisioning state** — whether the last operation succeeded
+   - **Health state** — application health (requires a health probe to be configured)
+   - **Latest model** — whether the instance matches the current scale set model (important after OS image updates)
+
+   From the toolbar you can **Start**, **Stop**, **Reimage**, or **Upgrade** instances.
+
+9. Navigate to **Operations → Upgrade policy**. The default is **Manual**,
+    meaning OS image upgrades are applied instance-by-instance only when you
+    trigger them. **Automatic** and **Rolling** policies allow Azure to manage
+    OS upgrades with configurable batch sizes and health checks — important for
+    zero-downtime patching in production.
+
+### Simulate a scale event (optional)
+
+10. Select the instance name (e.g. **lab3-vmss_0**) to open the individual VM resource. Navigate to **Support + troubleshooting → Serial console**. Once the console connects, log in with the username and password you set during creation and run:
+
+    ```bash
+    sudo apt-get update && sudo apt-get install -y stress-ng
+    ```
+
+    > **Tip:** If you see `Could not get lock /var/lib/dpkg/lock-frontend`, another apt process (e.g. unattended-upgrades) is running in the background. Wait 1–2 minutes and retry, or skip this step if `stress-ng` is already installed from a previous run.
+
+    Once installed, run the stressor:
+
+    ```bash
+    stress-ng --cpu 4 --timeout 600 &
+    ```
+
+    > **Tip:** The serial console may garble pasted commands (bracketed paste mode). If you see `command not found` after pasting, type the command manually instead.
+
+    > **Why 600 seconds?** Azure autoscale evaluates metrics over a rolling window (default ~5 minutes) before triggering a scale action. A 120-second run ends before the window closes, so CPU drops below threshold before autoscale fires. 600 seconds keeps CPU elevated long enough for the evaluation to complete.
+
+    Return to the scale set's **Scaling** blade and select **Refresh** every
+    30 seconds. Once CPU exceeds 75 % you should see the instance count increase
+    from 2 to 3. After the stress tool exits, the count will decrease back toward
+    the minimum after the cooldown period.
+
+### Key point
+
+VMSS provides the same horizontal scaling model as App Service autoscale or
+Container Apps, but at the VM layer — you retain full OS control at the cost
+of managing OS images, agents, and health probes yourself. For new workloads,
+prefer App Service or Container Apps unless you have a specific requirement for
+OS-level access.
+
+### Cleanup
+
+When finished, delete the scale set to avoid charges:
+
+```bash
+az vmss delete --resource-group RG-Lab3 --name lab3-vmss --yes
+```
+
+---
+
 ## Resources
 
 - [Azure Virtual Machines documentation](https://learn.microsoft.com/en-us/azure/virtual-machines/)
