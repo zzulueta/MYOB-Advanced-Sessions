@@ -336,19 +336,22 @@ and applications that manage their own state in memory.
    | Setting | Value |
    | --- | --- |
    | Image source | **Other container registries** |
-   | Image and tag | `mcr.microsoft.com/appsvc/staticsite:latest` |
+   | Access type | **Public** |
+   | Registry server URL | `https://mcr.microsoft.com` |
+   | Image and tag | `appsvc/staticsite:latest` |
+   | Port | `80` |
 
 5. Select **Review + create**, then **Create**. Wait for the deployment to succeed,
    then select **Go to resource**.
 
 ### Explore the App Service
 
-6. On the **Overview** blade, select the **Default domain** link (ending in
+7. On the **Overview** blade, select the **Default domain** link (ending in
    `.azurewebsites.net`). A browser tab opens and, after a brief startup, shows
    the **"Welcome to nginx!"** page. Note the URL — this is a free, TLS-terminated subdomain
    provided automatically by Azure.
 
-7. Navigate to **App Service plan → Scale out** in the left nav. Observe the three scale-out methods:
+8. Navigate to **App Service plan → Scale out** in the left nav. Observe the three scale-out methods:
 
    - **Manual** — set a fixed instance count (available on all tiers, currently selected)
    - **Automatic** — platform-managed scale in/out based on HTTP traffic (requires Premium v2/v3 — greyed out on B1)
@@ -358,7 +361,7 @@ and applications that manage their own state in memory.
 
    > **Key difference from Functions:** App Service autoscaling must be explicitly configured — you choose the method and thresholds. Functions on the Flex Consumption plan scale automatically with no configuration required.
 
-8. Navigate to **Deployment → Deployment slots**. Note that deployment slots
+9. Navigate to **Deployment → Deployment slots**. Note that deployment slots
    (staging, QA, etc.) are available from the **Standard S1** tier upward.
    Slots allow you to deploy and warm up a new version before swapping it into
    production with zero downtime — a critical feature for production web apps.
@@ -366,11 +369,11 @@ and applications that manage their own state in memory.
    > This feature is visible but greyed out on B1. Note the SKU upgrade path for
    > a future production deployment.
 
-9. Navigate to **Log stream**. Within a few seconds you should see
+10. Navigate to **Log stream**. Within a few seconds you should see
    live stdout/stderr from the running container. This is the simplest form of
    application observability — no agents required for basic log tailing.
 
-10. Navigate to **Settings → Configuration → General settings**. Because this web app was deployed as a container, there is no runtime stack selector here — that only appears for code-based deployments. Observe the platform settings available: HTTPS only enforcement, minimum TLS version, HTTP version, and Always on. Select the **Stack settings** tab to confirm the container image in use.
+11. Navigate to **Settings → Configuration → General settings**. Because this web app was deployed as a container, there is no runtime stack selector here — that only appears for code-based deployments. Observe the platform settings available: HTTPS only enforcement, minimum TLS version, HTTP version, and Always on. Select the **Stack settings** tab to confirm the container image in use.
 
 **Key point:** App Service abstracts the OS and runtime from you, but you retain
 full control over your application code, startup commands, and environment
@@ -420,8 +423,9 @@ an AKS cluster.
    | Use quickstart image | **Unchecked** |
    | Name | `hello-world` |
    | Image source | **Docker Hub or other registries** |
-   | Image and tag | `mcr.microsoft.com/azuredocs/containerapps-helloworld:latest` |
-   | CPU and Memory | **0.25 CPU cores, 0.5 Gi memory** |
+   |Registry login server| `mcr.microsoft.com` |
+   | Image and tag | `azuredocs/containerapps-helloworld:latest` |
+   | CPU and Memory | **0.5 CPU cores, 1 Gi memory** |
 
 5. Select the **Ingress** tab:
 
@@ -438,32 +442,35 @@ an AKS cluster.
 ### Invoke and scale the container
 
 7. Once deployed, select **Go to resource**. On the **Overview** blade, select
-   the **Application URL** link. Confirm the Hello World page loads over HTTPS —
+   the **Application URL** link. Confirm the page loads over HTTPS —
    the TLS certificate is provisioned and managed automatically by Azure.
 
-8. Navigate to **Settings → Scale**. Review the scaling configuration:
+8. Navigate to **Application → Scale**. Review the scaling configuration:
 
-   | Trigger type | Default value | Notes |
+   | Setting | Default value | Notes |
    | --- | --- | --- |
    | Min replicas | `0` | Scale to zero when idle — no idle cost |
    | Max replicas | `10` | Upper bound on horizontal scaling |
-   | Concurrent requests | `10` per replica | HTTP trigger threshold |
+   | Cooldown period | `300` seconds | Wait time before scaling in |
+   | Polling interval | `30` seconds | How often scale rules are evaluated |
 
-   > **Scale to zero** is the defining Container Apps cost behaviour. When no
-   > traffic arrives for a configurable period, all replicas are removed and you
-   > pay nothing for compute. The cold-start latency on first request is typically
-   > 1–3 seconds for a small container, which is acceptable for many workloads.
+   Under **Scale rules**, note the pre-configured **http-scaler** rule of type **HTTP scaling** — this is what triggers scale-out when HTTP traffic increases.
 
 9. Navigate to **Application → Revisions and replicas**. Note that Container Apps
    uses a **revision model** — every deployment creates a new immutable revision.
-   Traffic can be split across revisions (e.g., 90 % stable / 10 % canary) using
-   the **Traffic weight** sliders. This is a built-in blue/green and canary
+   By default the app runs in **Single revision mode**, where all traffic goes to
+   the latest revision automatically. To enable traffic splitting across multiple
+   revisions (e.g., 80 % stable / 20 % canary), select **Choose Deployment mode**
+   and switch to **Multiple**. You can then assign traffic percentages to each
+   active revision in the **Traffic** column — a built-in blue/green and canary
    deployment capability without any additional infrastructure.
 
-10. Select **Create new revision** and change only the **Container image tag** to
-    `latest` (no actual change). Confirm a new revision is created and immediately
-    receives 100 % of traffic. This demonstrates the zero-downtime deployment
-    workflow.
+10. Select **Create new revision**. On the **Create and deploy new revision** blade:
+    - Optionally enter a **Name / suffix** (e.g. `v2`) to make the revision easy to identify.
+    - Leave all other settings at their defaults — the existing container image and scale settings are inherited from the current revision.
+    - Select **Create**.
+
+    Confirm the new revision appears in the list and, in single revision mode, immediately receives 100 % of traffic. This demonstrates the zero-downtime deployment workflow — the new revision is provisioned before traffic is switched.
 
 11. In Cloud Shell (Bash), use the Azure CLI to inspect the running container:
 
