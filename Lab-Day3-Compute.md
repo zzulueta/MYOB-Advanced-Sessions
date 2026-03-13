@@ -46,7 +46,7 @@ Subscription
     │   └── HttpTriggerFunction  ← HTTP GET → JSON response
     │
     ├── lab3-appserviceplan  (B1, Linux)
-    │   └── lab3-webapp  ← public URL → sample page
+    │   └── lab3-webapp  ← public URL → static site (appsvc/staticsite)
     │
     └── lab3-env  (Container Apps Environment)
         └── lab3-containerapp
@@ -209,7 +209,7 @@ to zero when idle, eliminating the concept of an "idle VM".
 > CI/CD pipeline. In this lab you will use Azure Cloud Shell with the Azure
 > Functions Core Tools.
 
-5. Open **Azure Cloud Shell** (Bash) from the portal toolbar.
+5. Open **Azure Cloud Shell** (Bash) from the portal toolbar. Select Settings then **Go to Classic version**
 
 6. Verify that Azure Functions Core Tools is available — it is pre-installed in Cloud Shell:
 
@@ -336,7 +336,7 @@ and applications that manage their own state in memory.
    | Setting | Value |
    | --- | --- |
    | Image source | **Other container registries** |
-   | Image and tag | `mcr.microsoft.com/azuredocs/containerapps-helloworld:latest` |
+   | Image and tag | `mcr.microsoft.com/appsvc/staticsite:latest` |
 
 5. Select **Review + create**, then **Create**. Wait for the deployment to succeed,
    then select **Go to resource**.
@@ -345,17 +345,18 @@ and applications that manage their own state in memory.
 
 6. On the **Overview** blade, select the **Default domain** link (ending in
    `.azurewebsites.net`). A browser tab opens and, after a brief startup, shows
-   the Hello World page. Note the URL — this is a free, TLS-terminated subdomain
+   the **"Welcome to nginx!"** page. Note the URL — this is a free, TLS-terminated subdomain
    provided automatically by Azure.
 
-7. Navigate to **Settings → Scale out (App Service plan)**. Select
-   **Automatic (preview)** or **Manual scale**. If using manual scale, observe
-   that you can increase the instance count to a maximum allowed by your SKU.
+7. Navigate to **App Service plan → Scale out** in the left nav. Observe the three scale-out methods:
 
-   > **Key difference from Functions:** App Service autoscaling is configured by
-   > you — you define metric thresholds (CPU %, request count, queue depth) and
-   > Azure adds or removes instances accordingly. Functions on the Consumption plan
-   > auto-scale without any configuration.
+   - **Manual** — set a fixed instance count (available on all tiers, currently selected)
+   - **Automatic** — platform-managed scale in/out based on HTTP traffic (requires Premium v2/v3 — greyed out on B1)
+   - **Rules Based** — custom metric thresholds (requires Standard or higher — greyed out on B1)
+
+   On B1, only Manual scaling is available. Note the instance count is set to **1**.
+
+   > **Key difference from Functions:** App Service autoscaling must be explicitly configured — you choose the method and thresholds. Functions on the Flex Consumption plan scale automatically with no configuration required.
 
 8. Navigate to **Deployment → Deployment slots**. Note that deployment slots
    (staging, QA, etc.) are available from the **Standard S1** tier upward.
@@ -365,14 +366,11 @@ and applications that manage their own state in memory.
    > This feature is visible but greyed out on B1. Note the SKU upgrade path for
    > a future production deployment.
 
-9. Navigate to **Monitoring → Log stream**. Within a few seconds you should see
+9. Navigate to **Log stream**. Within a few seconds you should see
    live stdout/stderr from the running container. This is the simplest form of
    application observability — no agents required for basic log tailing.
 
-10. Navigate to **Settings → Configuration → General settings** and review the
-    available runtime stacks (Node.js, Python, .NET, Java, PHP, Ruby, custom
-    containers). Switching the runtime requires only a configuration change and
-    a restart — no infrastructure change.
+10. Navigate to **Settings → Configuration → General settings**. Because this web app was deployed as a container, there is no runtime stack selector here — that only appears for code-based deployments. Observe the platform settings available: HTTPS only enforcement, minimum TLS version, HTTP version, and Always on. Select the **Stack settings** tab to confirm the container image in use.
 
 **Key point:** App Service abstracts the OS and runtime from you, but you retain
 full control over your application code, startup commands, and environment
