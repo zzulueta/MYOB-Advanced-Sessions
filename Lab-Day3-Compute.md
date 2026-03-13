@@ -42,7 +42,7 @@ Subscription
     ├── lab3-vm  (Standard_B2s, Ubuntu 22.04)
     │   └── Auto-shutdown configured
     │
-    ├── lab3-funcapp  (Consumption Plan, Node.js 20)
+    ├── lab3-funcapp  (Flex Consumption Plan, Node.js 22)
     │   └── HttpTriggerFunction  ← HTTP GET → JSON response
     │
     ├── lab3-appserviceplan  (B1, Linux)
@@ -178,13 +178,13 @@ unoptimised Pay-As-You-Go deployment.
 ## Task 2: Create and Invoke a Serverless Azure Function
 
 Azure Functions is a serverless compute service — you deploy only your code, and
-Azure handles provisioning, scaling, and availability. The **Consumption plan**
+Azure handles provisioning, scaling, and availability. The **Flex Consumption plan**
 charges only for executions (the first 1 million per month are free) and scales
 to zero when idle, eliminating the concept of an "idle VM".
 
 ### Create the Function App
 
-1. Search for and select **Function App**, then select **+ Create → Consumption**.
+1. Search for and select **Function App**, then select **+ Create → Flex Consumption**.
 
 2. On the **Basics** tab:
 
@@ -192,10 +192,9 @@ to zero when idle, eliminating the concept of an "idle VM".
    | --- | --- |
    | Resource group | **RG-Lab3** |
    | Function App name | `lab3-funcapp-<your-initials>` (must be globally unique) |
-   | Runtime stack | **Node.js** |
-   | Version | **20 LTS** |
    | Region | **Australia East** |
-   | Operating system | **Linux** |
+   | Runtime stack | **Node.js** |
+   | Version | **22 LTS** |
 
 3. Select **Review + create**, then **Create**. The deployment provisions a
    Storage Account automatically — Functions requires storage for state, logs,
@@ -203,24 +202,45 @@ to zero when idle, eliminating the concept of an "idle VM".
 
 4. Select **Go to resource** when the deployment completes.
 
-### Create an HTTP-triggered function
+### Create and deploy an HTTP-triggered function via Cloud Shell
 
-5. In the **Functions** blade, select **Create function**.
+> **Note:** The Flex Consumption plan does not support in-portal function creation
+> or the `Code + Test` editor. Functions must be deployed via CLI, VS Code, or a
+> CI/CD pipeline. In this lab you will use Azure Cloud Shell with the Azure
+> Functions Core Tools.
 
-6. In **Select a template**, choose **HTTP trigger**, then select **Next**.
+5. Open **Azure Cloud Shell** (Bash) from the portal toolbar.
 
-7. Configure the function:
+6. Verify that Azure Functions Core Tools is available — it is pre-installed in Cloud Shell:
 
-   | Setting | Value |
-   | --- | --- |
-   | Function name | `HttpTriggerFunction` |
-   | Authorization level | **Anonymous** |
+   ```bash
+   func --version
+   ```
 
-   Select **Create**.
+   You should see a version number (4.x or higher). No installation is required.
 
-8. Once created, select the function, then select **Code + Test** in the left menu.
+7. Create a new Functions project in Cloud Shell:
 
-9. Replace the entire contents of `index.js` with the following code:
+   ```bash
+   mkdir lab3-func && cd lab3-func
+   func init --worker-runtime node --language javascript --model V4
+   ```
+
+8. Add an HTTP-triggered function:
+
+   ```bash
+   func new --name HttpTriggerFunction --template "HTTP trigger" --authlevel anonymous
+   ```
+
+9. Open the generated function file in the Cloud Shell editor. Since you are already inside the `lab3-func` directory from step 7, use `$(pwd)` to build the correct absolute path:
+
+   ```bash
+   code $(pwd)/src/functions/HttpTriggerFunction.js
+   ```
+
+   > **Why `$(pwd)` instead of `~/`?** Cloud Shell's `code` command prepends `$HOME` to the path internally, so passing `~/lab3-func/...` causes it to double the home directory (e.g. `/home/user/home/user/...`). Using `$(pwd)` passes the already-resolved absolute path and avoids this.
+
+   Replace the entire contents of the file with the following, then press **Ctrl+S** to save and close the editor:
 
    ```javascript
    const { app } = require('@azure/functions');
@@ -242,35 +262,42 @@ to zero when idle, eliminating the concept of an "idle VM".
    });
    ```
 
-10. Select **Save**. Azure will show a green **Saved** indicator.
+10. Deploy the function to your Function App (replace `<your-initials>` to match your app name):
+
+    ```bash
+    func azure functionapp publish lab3-funcapp-<your-initials> --node --build remote
+    ```
+
+    Wait for the deployment to complete. You will see the function URL printed at the end of the output.
 
 ### Test the function
 
-11. Select **Test/Run**. On the **Input** tab:
+11. Copy the function URL from the deployment output. Open a browser and navigate to:
 
-    | Setting | Value |
-    | --- | --- |
-    | HTTP method | **GET** |
-    | Query | Add parameter: key `name`, value `MYOB` |
+    ```
+    <function-url>?name=MYOB
+    ```
 
-12. Select **Run**. On the **Output** tab, confirm you receive an HTTP 200 response
-    with a JSON body containing your name.
+    Confirm you receive a JSON response with the message `Hello, MYOB!...`.
 
-13. Select **Get function URL** (top of the **Code + Test** blade). Copy the URL.
-    Open a browser and navigate to `<function-url>&name=MYOB`. Confirm identical
-    output is returned over the public internet.
+12. Alternatively, test directly from Cloud Shell by retrieving the URL automatically (replace `<your-initials>`):
 
-14. Navigate back to the Function App overview. Select **App Service plan** and
-    note it shows the **Consumption plan**. In the **Scale out (App Service plan)**
-    blade, observe that Azure manages all scaling decisions automatically — there
-    are no scale rules to configure.
+    ```bash
+    FUNC_URL=$(az functionapp function show \
+      --resource-group RG-Lab3 \
+      --name lab3-funcapp-<your-initials> \
+      --function-name HttpTriggerFunction \
+      --query "invokeUrlTemplate" -o tsv)
+    curl "${FUNC_URL}?name=MYOB"
+    ```
 
-**Key point:** The Consumption plan is genuinely pay-per-execution with automatic
-scaling from zero. The **Premium plan** adds VNet integration, always-warm
-instances, and more powerful SKUs at a fixed hourly cost — useful for Functions
-that need network isolation or sub-second cold-start times. **App Service plan**
-hosting runs Functions on dedicated compute alongside your web apps — suitable
-when you already have spare App Service capacity.
+    > **Note:** In Bash, variable assignments must have **no spaces** around `=`. Writing `FUNC_URL = https://...` causes the error `FUNC_URL: command not found`.
+
+13. Back in the portal, navigate to the Function App and select **Overview** in the left nav. The `HttpTriggerFunction` now appears in the list under the Functions tab. Select it to view its details.
+
+14. Navigate to **Settings → Scale and concurrency** on the Function App. Scroll down to the **Always-ready instance count** section — this controls how many instances are kept warm to avoid cold starts. Azure still manages all burst scaling automatically beyond that baseline.
+
+**Key point:** The **Flex Consumption plan** is pay-per-execution with automatic scaling from zero, like the classic Consumption plan, but adds VNet integration support and configurable always-ready instances to reduce cold starts — without committing to a fixed hourly cost. The **Premium plan** provides always-warm instances and more powerful SKUs at a fixed hourly cost. **App Service plan** hosting runs Functions on dedicated compute alongside your web apps — suitable when you already have spare App Service capacity.
 
 ---
 
@@ -505,10 +532,10 @@ Use this table as a quick reference when choosing a compute surface:
 | --- | --- | --- | --- | --- |
 | **Unit of deployment** | OS image | Function code | Application code / container | Container image |
 | **OS control** | Full | None | None | None |
-| **Idle cost** | Yes (unless deallocated) | No (Consumption) | Yes | No (scale-to-zero) |
+| **Idle cost** | Yes (unless deallocated) | No (Flex Consumption) | Yes | No (scale-to-zero) |
 | **Cold start** | None (always running) | Yes (~0.5–2 s) | None (warm) | Yes (~1–3 s) |
 | **Scaling model** | Manual / VMSS | Automatic | Manual rules or automatic | Automatic (KEDA) |
-| **Max runtime** | Unlimited | 10 min (Consumption) | Unlimited | Unlimited |
+| **Max runtime** | Unlimited | 30 min (Flex Consumption) | Unlimited | Unlimited |
 | **Operational overhead** | High | Very low | Low | Low |
 | **Best for** | Lift-and-shift, licensed software | Event handlers, short tasks | Traditional web apps & APIs | Microservices, containerised APIs |
 
@@ -522,10 +549,12 @@ Use this table as a quick reference when choosing a compute surface:
   Spot for interruptible batch jobs, Azure Hybrid Benefit for Windows/SQL
   licences, and auto-shutdown for non-production environments.
 
-- **Azure Functions (Consumption plan)** is the lowest-cost option for
+- **Azure Functions (Flex Consumption plan)** is the lowest-cost option for
   infrequent, event-driven workloads — the first million executions per month
   are free. There is no infrastructure to manage and scaling is fully automatic.
-  The trade-off is cold starts and a maximum execution duration of 10 minutes.
+  Flex Consumption adds VNet integration and configurable always-ready instances
+  over the classic Consumption plan. The trade-off is cold starts when always-ready
+  instances are set to 0, and a maximum execution duration of 30 minutes.
 
 - **App Service** sits between serverless and VMs. The platform manages the OS
   and runtime; you manage your application. It is best suited to traditional
