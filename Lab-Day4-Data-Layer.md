@@ -462,7 +462,7 @@ built-in Query Editor.
 
 3. Log in using `sqladmin` and the password you set.
 
-4. In the query window, create the orders table:
+4. Select **New query**. In the query window, create the orders table:
 
    ```sql
    CREATE TABLE orders (
@@ -477,7 +477,7 @@ built-in Query Editor.
 
    Select **Run**.
 
-5. Insert sample rows:
+5. Select **New query**. Insert sample rows:
 
    ```sql
    INSERT INTO orders (customer_id, product_code, quantity, order_date, total_amount)
@@ -490,7 +490,7 @@ built-in Query Editor.
 
    Select **Run**.
 
-6. Query the data:
+6. Select **New query**. Query the data:
 
    ```sql
    SELECT
@@ -504,7 +504,7 @@ built-in Query Editor.
    ORDER BY order_date;
    ```
 
-7. Run an aggregation to demonstrate relational query capabilities:
+7. Select **New query**. Run an aggregation to demonstrate relational query capabilities:
 
    ```sql
    SELECT
@@ -521,15 +521,16 @@ built-in Query Editor.
 1. In the left menu, select **Overview**. Note the **Server name** FQDN format:
    `sqlserver-lab4-yourname.database.windows.net`
 
-2. Select **Backups** under **Data management**. Observe:
+2. Navigate to the **SQL Server** resource (`sqlserver-lab4-yourname`). Select
+   **Backups** under **Data management**. Observe:
    - **Full backups** are taken weekly
    - **Differential backups** are taken every 12–24 hours
    - **Transaction log backups** are taken every 5–10 minutes
    - The **Retention period** defaults to 7 days on the Basic tier
 
-3. Select **Compute + storage** under **Settings** and review the DTU-based pricing
-   model. Note the option to scale up to higher service tiers without re-deploying
-   the database.
+3. Navigate back to the **orders-db** database resource. Select **Compute + storage**
+   under **Settings** and review the DTU-based pricing model. Note the option to
+   scale up to higher service tiers without re-deploying the database.
 
 **Key relational database concepts demonstrated:**
 - **Schema enforcement** — the `CREATE TABLE` statement defines column names, types,
