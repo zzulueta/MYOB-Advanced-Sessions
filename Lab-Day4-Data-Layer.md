@@ -385,7 +385,7 @@ In this task you will:
    This demonstrates that Azure Files behaves like a real network share: any
    client with the share mounted sees writes made by any other client in real time.
 
-### Step 7: Clean Up the VM
+### Step 7: Shut down the VM
 
 1. Close the RDP session.
 
@@ -429,9 +429,9 @@ built-in Query Editor.
 
 ### Create an Azure SQL Server and Database
 
-1. In the Azure portal, search for and select **SQL databases**.
+1. In the Azure portal, search for and select **Azure SQL databases**.
 
-2. Select **+ Create** and configure the **Basics** tab:
+2. Select **+ Create** -> **SQL Database** and configure the **Basics** tab:
 
    | Setting | Value |
    | --- | --- |
@@ -440,7 +440,7 @@ built-in Query Editor.
    | Server | Select **Create new** (see below) |
    | Want to use SQL elastic pool? | **No** |
    | Workload environment | **Development** |
-   | Compute + storage | Select **Configure database** → Choose **Basic** tier (5 DTUs, 2 GB) |
+   | Compute + storage | Select **Configure database** → Choose **Basic** tier (Service Tier: DTU-based purchasing model) |
    | Backup storage redundancy | **Locally-redundant backup storage** |
 
 3. In the **Create SQL Server** dialog, configure:
@@ -455,11 +455,12 @@ built-in Query Editor.
 
    Select **OK**.
 
-4. Select **Next: Networking**. Under **Firewall rules**, set:
+4. Select **Next: Networking**. Select Connectivity Method to **Public endpoint**. Under **Firewall rules**, set:
 
    | Setting | Value |
    | --- | --- |
-   | Add current client IPv4 address | **Yes** |
+   | Allow Azure services and resources to access this server | **Yes** |
+   | Add current client IP address | **Yes** |
 
 5. Select **Review + Create**, then **Create**. Wait for deployment to complete.
 
