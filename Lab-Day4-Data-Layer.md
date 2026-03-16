@@ -13,8 +13,8 @@ storage service categories — object, file, disk, and database — and then pra
 selecting the right service for a given workload. You will work through the following tasks:
 - Create a storage account and explore its service types
 - Upload blobs and configure access tiers and lifecycle management
-- Create an Azure File Share and mount it in Cloud Shell
-- Review managed disk types and select the right SKU for a workload
+- Apply a lifecycle management policy to automate blob tier transitions
+- Deploy a Windows VM, connect via RDP, and map an Azure File Share
 - Deploy and query an Azure SQL Database (relational)
 - Deploy Azure Cosmos DB and work with a NoSQL data model
 - Apply storage and database design considerations to a real-world scenario
@@ -788,7 +788,7 @@ best fit each scenario before revealing the answer.
 
 ## Cleanup
 
-**Note:** Azure SQL Database, Cosmos DB, and managed disks incur ongoing charges.
+**Note:** Azure SQL Database, Cosmos DB, and the stopped VM (its OS managed disk continues to accrue storage charges while deallocated) incur ongoing charges.
 Delete resources promptly after the lab.
 
 1. In the portal, navigate to **RG-Lab4**.
@@ -800,7 +800,8 @@ Delete resources promptly after the lab.
 4. Select **Delete**.
 
    This removes all resources in the group including the storage account, SQL server
-   and database, Cosmos DB account, and managed disk.
+   and database, Cosmos DB account, and the VM together with its associated resources
+   (OS disk, NIC, public IP, NSG, and virtual network).
 
 ---
 
