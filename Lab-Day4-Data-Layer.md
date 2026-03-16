@@ -194,12 +194,13 @@ age. This removes the need to manually manage tiers as data ages.
 
 3. Select **Next** to open the **Base blobs** tab. Configure the following transitions:
 
-   | Condition | Days after last modification | Action |
+   | Condition | Last Modified | Action |
    | --- | --- | --- |
    | Move to Cool storage | `30` | ✔ |
    | Move to Cold storage | `90` | ✔ |
    | Move to Archive storage | `180` | ✔ |
    | Delete the blob | `365` | ✔ |
+Note: Select + Add conditions after each rule to add multiple transitions within the same lifecycle policy.
 
 4. Select **Add** to save the rule.
 
@@ -249,10 +250,6 @@ In this task you will:
    | --- | --- |
    | Name | `erp-share` |
    | Tier | **Transaction optimized** |
-   | Quota | `100` GiB |
-
-   > **Quota:** Caps maximum share size. You are billed only for data actually stored —
-   > the quota does not pre-allocate space.
 
 3. Select **Create**.
 
