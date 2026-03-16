@@ -20,7 +20,7 @@ cost controls available on each. You will work through the following tasks:
 
 - An Azure subscription
 - A resource group named **RG-Lab3**.
-Note: You will be assigned your own unique resource group name in the sandbox environment to avoid conflicts with other participants. Create a resource group in the same region you will deploy resources to (e.g., Australia East). Name the resource group RG-Lab3-<yourname>. Note the resource group name for use in all lab tasks.
+Note: You will be assigned your own unique resource group name in the sandbox environment to avoid conflicts with other participants. Create a resource group in the same region you will deploy resources to (e.g., Australia East). Name the resource group RG-Lab3-yourname. Note the resource group name for use in all lab tasks.
 - Owner rights at the resource group level
 - A local terminal (Bash or PowerShell) or Azure Cloud Shell
 
