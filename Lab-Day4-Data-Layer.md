@@ -385,16 +385,6 @@ In this task you will:
    This demonstrates that Azure Files behaves like a real network share: any
    client with the share mounted sees writes made by any other client in real time.
 
-### Step 7: Shut down the VM
-
-1. Close the RDP session.
-
-2. In the Azure portal, navigate to **RG-Lab4** and select the `vm-lab4-erp` VM.
-
-3. Select **Stop** to deallocate the VM and halt compute billing. You will delete
-   the entire resource group at the end of the lab.
-
-
 **SMB vs NFS:**
 
 | Protocol | OS support | Use case |
