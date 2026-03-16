@@ -37,8 +37,6 @@ technology:
   automatic tiering to reduce cost over time
 - A legacy ERP system requires a shared network file system accessible from multiple
   virtual machines simultaneously
-- Virtual machines running the application tier need high-performance managed disks
-  with predictable IOPS
 - Transactional order data must be stored relationally with ACID guarantees and
   queryable via SQL
 - A product catalogue with variable and frequently changing attributes is a better
