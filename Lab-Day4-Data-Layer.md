@@ -102,8 +102,8 @@ and review what each service offers.
    | Redundancy | **Locally-redundant storage (LRS)** |
 
 3. Select the **Advanced** tab and review the following options (leave defaults):
-   - **Require secure transfer** — enforces HTTPS-only access
-   - **Allow Blob public access** — controls whether anonymous access is possible
+   - **Require secure transfer for REST API operations** — enforces HTTPS-only access
+   - **Allow enabling anonymous access on individual containers** — controls whether anonymous access is possible (disabled by default)
    - **Minimum TLS version** — set to TLS 1.2
 
 4. Select **Review + Create**, then **Create**. Wait for deployment to succeed.
