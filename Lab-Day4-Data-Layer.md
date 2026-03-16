@@ -251,13 +251,13 @@ In this task you will:
    | Name | `erp-share` |
    | Tier | **Transaction optimized** |
 
-3. Select **Create**.
+3. Select **Review + Create**, then **Create**.
 
 4. Open the `erp-share` file share. Select **+ Add directory** and create two folders:
    - `invoices`
    - `reports`
 
-5. Select the `invoices` directory, then **Upload** and upload any small file from
+5. Under **Browse**, select the `invoices` directory, then **Upload** and upload any small file from
    your local machine as a test fixture.
 
 ### Step 2: Deploy a Windows Virtual Machine
