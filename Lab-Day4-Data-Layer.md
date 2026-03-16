@@ -9,7 +9,7 @@ lab:
 ## Lab Introduction
 
 In this lab you explore the Azure data layer by working hands-on with the four core
-storage service categories — object, file, disk, and database — and then practice
+storage service categories — object, file, relational, and NoSQL — and then practice
 selecting the right service for a given workload. You will work through the following tasks:
 - Create a storage account and explore its service types
 - Upload blobs and configure access tiers and lifecycle management
