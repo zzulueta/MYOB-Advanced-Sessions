@@ -21,7 +21,8 @@ selecting the right service for a given workload. You will work through the foll
 
 ## Pre-requisites
 - An Azure subscription
-- A resource group named **RG-Lab4**
+- A resource group named **RG-Lab4**.
+Note: You will be assigned your own unique resource group name in the sandbox environment to avoid conflicts with other participants. Create a resource group in the same region you will deploy resources to (e.g., Australia East). Name the resource group RG-Lab4-yourname. Note the resource group name for use in all lab tasks.
 - Owner rights at the resource group level
 
 ## Estimated Timing: 120 minutes
