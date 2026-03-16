@@ -318,20 +318,19 @@ In this task you will:
 
 3. Select **Connect** from the top toolbar.
 
-4. Select **Windows**. Read through the generated PowerShell script before using it.
+4. Select **Windows** then select **Show Script**. Read through the generated PowerShell script before using it.
    Key elements to notice:
-   - **`net use Z:`** — maps the share to drive letter `Z:`
-   - **`\\storageaccountname.file.core.windows.net\erp-share`** — the UNC path of
-     the share; this is identical in format to a traditional Windows file server path
-   - **`/user:Azure\storageaccountname`** and the storage account key — authenticate
-     using the account key
+   - **`Test-NetConnection ... -Port 445`** — verifies that outbound SMB traffic on port 445 is not blocked before attempting to mount
+   - **`cmdkey /add:`** — saves the storage account key as a Windows credential so the drive persists across reboots
+   - **`New-PSDrive -Name Z -PSProvider FileSystem`** — maps the share to drive letter `Z:`
+   - **`\\storageaccountname.file.core.windows.net\erp-share`** — the UNC path of the share; identical in format to a traditional Windows file server path
    - **`-Persist`** — ensures the mapping survives reboots
 
    > **Security note:** The storage account key grants full access to the entire
-   > storage account. For production workloads, use **Azure AD Kerberos
-   > authentication** or **on-premises AD DS integration** so individual user
-   > identities are used instead of a shared key. This enables per-user NTFS
-   > permissions and removes the need to distribute the account key.
+   > storage account. For production workloads, use **Active Directory or Microsoft Entra**
+   > authentication so individual user identities are used instead of a shared key.
+   > This enables per-user NTFS permissions and removes the need to distribute the
+   > account key.
 
 5. Select the **copy** icon to copy the full PowerShell script to your clipboard.
 
@@ -376,10 +375,12 @@ In this task you will:
    ```
 
 3. Switch back to the Azure portal on your local machine. Navigate to your storage
-   account → **File shares** → **erp-share** → **invoices**.
+   account → **Data storage** → **File shares** → **erp-share** → **Browse** → **invoices**.
 
-4. Confirm `from-vm.txt` appears in the portal. Open it — the content written from
+4. Confirm `from-vm.txt` appears in the portal. Download and open it. The content written from
    inside the VM is visible immediately.
+
+5. Navigate to the `reports` directory in the portal. Confirm `report-2026-03.txt` is also present.
 
    This demonstrates that Azure Files behaves like a real network share: any
    client with the share mounted sees writes made by any other client in real time.
@@ -393,9 +394,6 @@ In this task you will:
 3. Select **Stop** to deallocate the VM and halt compute billing. You will delete
    the entire resource group at the end of the lab.
 
-> **What is not cleaned up yet:** The `vnet-lab4` virtual network, public IP, NIC,
-> OS disk, and NSG were all created automatically alongside the VM. All of these
-> will be removed when the resource group is deleted at the end of the lab.
 
 **SMB vs NFS:**
 
