@@ -613,11 +613,11 @@ orders table.
 
    | Setting | Value |
    | --- | --- |
+   | Workload Type | **Learning** |
    | Resource group | **RG-Lab4** |
    | Account name | `cosmos-lab4-yourname` (globally unique) |
    | Location | **Australia East** |
    | Capacity mode | **Serverless** |
-   | Apply Free Tier discount | **Apply** (if available on your subscription) |
 
 4. Select **Review + Create**, then **Create**. Deployment takes 3–5 minutes.
 
@@ -719,15 +719,29 @@ orders table.
    RUs are the Cosmos DB billing and throughput unit — one RU equals the cost of
    reading a 1 KB document.
 
-### Review global distribution (read-only)
+### Review consistency and global distribution (conceptual)
 
-1. In the left menu, select **Replicate data globally**.
+1. In the left menu, expand **Settings** and select **Default consistency**.
 
-2. Observe the world map. The primary write region is **Australia East** (as configured).
+2. Observe the five consistency levels available:
 
-3. Review the **Add region** option — in a production account you would add read
-   regions here to serve geographically distributed users with low-latency reads.
-   **Do not add regions** during this lab (additional cost).
+   | Level | Description |
+   | --- | --- |
+   | **Strong** | Linearisable reads — always returns the most recent write |
+   | **Bounded staleness** | Reads lag behind writes by at most X operations or T seconds |
+   | **Session** | Consistent reads for a single client session (default) |
+   | **Consistent prefix** | Reads never see out-of-order writes |
+   | **Eventual** | Lowest latency; reads may return older data |
+
+   The default is **Session**, which is appropriate for most application workloads.
+
+   > **Global distribution note:** The **Replicate data globally** option is only
+   > available for **Provisioned throughput** accounts. Because this lab uses
+   > **Serverless** capacity mode, the account is locked to a single region
+   > (Australia East) and multi-region replication is not available. In a production
+   > provisioned-throughput account, you would add read regions under
+   > **Settings** → **Replicate data globally** to serve geographically distributed
+   > users with low-latency reads.
 
 ---
 
