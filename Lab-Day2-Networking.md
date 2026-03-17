@@ -317,7 +317,12 @@ connectivity.
 
 1. Open **Cloud Shell** (Bash) from the top-right of the portal.
 
-2. Run the following commands to deploy all three VMs. Replace `<password>` with a complex password of your choice.
+2. Run the following commands to deploy all three VMs. 
+
+   Do the following before running the script:
+   - Replace `<password>` with a complex password of your choice.
+   - Replace the resource group name with the actual resource group name assigned to you in the sandbox environment (e.g., RG-Lab2-yourname).
+   - Replace the VM size based on what's available in your subscription. 
 
    ```bash
    # NSG to allow HTTP to the AppVnet backend VMs
