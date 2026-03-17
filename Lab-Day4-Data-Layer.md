@@ -838,7 +838,7 @@ best fit each scenario before revealing the answer.
 
 ## Cleanup
 
-**Note:** Azure SQL Database, Cosmos DB, and the stopped VM (its OS managed disk continues to accrue storage charges while deallocated) incur ongoing charges.
+**Note:** Azure SQL Database, Cosmos DB, and the VM incur ongoing charges.
 Delete resources promptly after the lab.
 
 1. In the portal, navigate to **RG-Lab4**.
@@ -870,10 +870,6 @@ Delete resources promptly after the lab.
   drives — Blob Storage does not support the file system semantics these workloads
   require.
 
-- **Managed Disks** provide block storage for Virtual Machine OS and data disks.
-  The SKU (Standard HDD → Ultra Disk) determines IOPS and throughput; Premium SSD
-  v2 and Ultra Disk decouple IOPS from disk capacity.
-
 - **Azure SQL Database** provides a fully managed relational database with ACID
   transactions, full SQL support, automatic backups, and built-in high availability.
   Choose it when your workload requires structured schemas, joins, or aggregate
@@ -901,7 +897,6 @@ Delete resources promptly after the lab.
 - [Azure Storage documentation](https://learn.microsoft.com/en-us/azure/storage/)
 - [Blob Storage access tiers](https://learn.microsoft.com/en-us/azure/storage/blobs/access-tiers-overview)
 - [Azure Files documentation](https://learn.microsoft.com/en-us/azure/storage/files/)
-- [Azure Managed Disks overview](https://learn.microsoft.com/en-us/azure/virtual-machines/managed-disks-overview)
 - [Azure SQL Database documentation](https://learn.microsoft.com/en-us/azure/azure-sql/database/)
 - [Azure Cosmos DB documentation](https://learn.microsoft.com/en-us/azure/cosmos-db/)
 - [Choose an Azure data store](https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/data-store-overview)
