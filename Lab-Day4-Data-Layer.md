@@ -449,7 +449,7 @@ built-in Query Editor.
 
    | Setting | Value |
    | --- | --- |
-   | Allow Azure services and resources to access this server | **Yes** |
+   | Allow Azure services and resources to access this server | **No** |
    | Add current client IP address | **Yes** |
 
 5. Select **Review + Create**, then **Create**. Wait for deployment to complete.
@@ -516,17 +516,66 @@ built-in Query Editor.
    ORDER BY lifetime_value DESC;
    ```
 
+### Test SQL connectivity from the VM (expected failure)
+
+This step demonstrates Azure SQL Database's network-level firewall. When the database
+was created, the firewall was configured to allow your **local machine's** IP address.
+The VM has a different public IP, so a connection attempt from it will be blocked.
+
+1. Switch to your open RDP session on `vm-lab4-erp`.
+
+2. Open **Microsoft Edge** (or Internet Explorer) inside the RDP session and navigate
+   to the **Azure portal** (`https://portal.azure.com`). Sign in with your Azure credentials.
+
+3. Navigate to **RG-Lab4** → **orders-db** → **Query editor (preview)**.
+
+4. Enter the login credentials (`sqladmin` and your password) and select **OK**.
+
+5. Observe the error. The login will fail with a message similar to:
+
+   ```
+   Your IP address isn't allowed to access this server.
+   ```
+
+   This IP address is the VM's public IP — different from your local machine's IP
+   that was added during database creation. The server-level firewall is blocking it.
+
+6. To resolve this, copy your VM's public IP address displayed in the error message and switch back to the Azure portal on your **local machine** (outside
+   the RDP session). Navigate to the **SQL Server** resource (`sqlserver-lab4-yourname`).
+
+7. Under **Security**, select **Networking**.
+
+8. Under **Firewall rules**, select **+ Add a firewall rule** and enter:
+
+   | Setting | Value |
+   | --- | --- |
+   | Rule name | `allow-vm-lab4` |
+   | Start IP | The VM's public IP address shown in the error message in step 5 |
+   | End IP | Same as Start IP |
+
+   Select **Save**.
+
+   Note: Enabling **Allow Azure services and resources to access this server** also works.
+
+9. Switch back to the RDP session. Refresh the **Query editor** page and log in again.
+   The connection should now succeed.
+
+   > **Key concept:** Azure SQL Database firewall rules are evaluated at the server
+   > level before any authentication occurs. The VM and your local machine are two
+   > separate clients with different public IP addresses — each must be explicitly
+   > allowed. This is separate from the database login credentials.
+
 ### Review high-availability and backup configuration
 
 1. In the left menu, select **Overview**. Note the **Server name** FQDN format:
    `sqlserver-lab4-yourname.database.windows.net`
 
 2. Navigate to the **SQL Server** resource (`sqlserver-lab4-yourname`). Select
-   **Backups** under **Data management**. Observe:
-   - **Full backups** are taken weekly
-   - **Differential backups** are taken every 12–24 hours
-   - **Transaction log backups** are taken every 5–10 minutes
-   - The **Retention period** defaults to 7 days on the Basic tier
+   **Backups** under **Data management**. Observe **Retention policies**:
+   - **PITR** Point-in-time restore is enabled by default with a 7-day retention period on the Basic tier
+   - **Differential backups** are taken every 24 hours
+   - **LTR** Long-term retention is disabled by default (additional cost to enable)
+   
 
 3. Navigate back to the **orders-db** database resource. Select **Compute + storage**
    under **Settings** and review the DTU-based pricing model. Note the option to
@@ -538,6 +587,7 @@ built-in Query Editor.
 - **ACID transactions** — inserts and updates are atomic and durable by default
 - **Aggregation and joins** — SQL natively expresses cross-row and cross-table
   calculations without application-layer iteration
+
 
 ---
 
