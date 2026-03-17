@@ -734,6 +734,7 @@ orders table.
    | **Eventual** | Lowest latency; reads may return older data |
 
    The default is **Session**, which is appropriate for most application workloads.
+   Learn more: [Consistency levels in Azure Cosmos DB](https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels)
 
    > **Global distribution note:** The **Replicate data globally** option is only
    > available for **Provisioned throughput** accounts. Because this lab uses
