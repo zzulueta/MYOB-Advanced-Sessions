@@ -49,8 +49,8 @@ and namespace separation — that reflect production-ready cluster practices.
 ```
 RG-Lab5 (Resource Group)
 └── AKS Cluster (aks-lab5-yourname)
-    ├── System Node Pool (Standard_B2s × 1)  — kube-system workloads
-    └── User Node Pool (Standard_B2s × 2)    — application workloads
+    ├── System Node Pool (Standard_D2s_v3 × 1)  — kube-system workloads
+    └── User Node Pool (Standard_D2s_v3 × 2)    — application workloads
         │
         ├── Namespace: frontend
         │   ├── Deployment: web-frontend  (nginx)
@@ -97,29 +97,50 @@ cost; you pay only for the agent nodes that run your workloads.
    | Setting | Value |
    | --- | --- |
    | Resource group | **RG-Lab5** |
-   | Cluster name | `aks-lab5-yourname` (replace *yourname* to keep it unique) |
+   | Kubernetes cluster name | `aks-lab5-yourname` (replace *yourname* to keep it unique) |
    | Region | **Australia East** |
-   | Kubernetes version | Accept the default (latest stable) |
    | Availability zones | **None** (cost saving for lab) |
    | AKS Pricing tier | **Free** |
-   | Node size | **Standard_B2s** (click **Choose a size** to select) |
+   | Kubernetes version | Accept the default (latest stable) |
+   | Automatic upgrade | **Enabled with patch (recommended)** — leave default |
+   | Authentication and Authorization | **Local accounts with Kubernetes RBAC** |
+
+3. Select the **Node pools** tab. You will see two node pools: **agentpool** (System) and **userpool** (User).
+
+   Select **agentpool** to edit it and configure:
+
+   | Setting | Value |
+   | --- | --- |
+   | Node size | **Standard_D2s_v3** (select **Choose a size**, search for `D2s_v3`) |
+   | Scale method | **Manual** |
+   | Node count | `1` |
+
+   Select **Update** to save.
+
+   Then select **userpool** and configure:
+
+   | Setting | Value |
+   | --- | --- |
+   | Node size | **Standard_D2s_v3** |
    | Scale method | **Manual** |
    | Node count | `2` |
 
-3. Select the **Node pools** tab. Notice the single **agentpool** node pool. Leave defaults.
+   Select **Update** to save the node pool changes.
 
 4. Select the **Networking** tab and review:
 
    | Setting | Value |
    | --- | --- |
-   | Network configuration | **Kubenet** |
+   | Network configuration | **Azure CNI Overlay** (default — leave as-is) |
    | DNS name prefix | Accept the default |
+   | Enable Cilium dataplane and network policy engine | Leave as default |
 
-   > **Kubenet vs Azure CNI:** With Kubenet, Pods receive IPs from an internal overlay
-   > network not directly routable from the VNet. With Azure CNI, each Pod receives
-   > a VNet IP and is directly reachable. Azure CNI is required for features like
-   > Private Link to Pods and certain network policies. Kubenet is sufficient for
-   > this lab.
+   > **Azure CNI Overlay vs Azure CNI Node Subnet:** With Azure CNI Overlay, Pods
+   > receive IPs from a private overlay address space separate from the VNet — this
+   > is more scalable and is now the default. Azure CNI Node Subnet (previously just
+   > called "Azure CNI") assigns each Pod a VNet IP directly, which is required when
+   > Pods must be reachable by other VNet resources by IP. Azure CNI Overlay is
+   > sufficient for this lab.
 
 5. Select the **Monitoring** tab. Disable **Container Insights** to reduce lab cost
    (set **Enable Container Logs** to **Off**).
