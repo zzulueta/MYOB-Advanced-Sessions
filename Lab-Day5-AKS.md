@@ -142,8 +142,19 @@ cost; you pay only for the agent nodes that run your workloads.
    > Pods must be reachable by other VNet resources by IP. Azure CNI Overlay is
    > sufficient for this lab.
 
-5. Select the **Monitoring** tab. Disable **Container Insights** to reduce lab cost
-   (set **Enable Container Logs** to **Off**).
+5. Select the **Monitoring** tab and **disable all monitoring options** to keep the
+   lab resource count low and avoid extra charges:
+
+   | Setting | Value |
+   | --- | --- |
+   | Enable Container Logs | **Off** (disables Container Insights) |
+   | Enable Prometheus metrics | **Off** (otherwise Azure creates a Monitor workspace + Grafana instance) |
+   | Enable Azure Managed Grafana | **Off** |
+
+   > **Why this matters:** Leaving Prometheus and Grafana enabled causes Azure to
+   > automatically provision ~15 extra resources (Azure Monitor workspace, Azure
+   > Managed Grafana, multiple Prometheus rule groups, data collection rules, and
+   > metric alert rules). For this lab you only need the Kubernetes service itself.
 
 6. Select **Review + Create**, then **Create**. Provisioning takes 4–6 minutes.
 
