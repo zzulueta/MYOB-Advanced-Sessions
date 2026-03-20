@@ -904,9 +904,37 @@ when a PVC is created.
 
    Press `Ctrl+C` once the Pod shows **Running**.
 
+9. Simulate the `web-frontend` Pods connecting to the `order-processor` via the ClusterIP Service. Exec into one of the frontend Pods and resolve the backend Service DNS name:
+
+   ```bash
+   kubectl exec -n frontend \
+     $(kubectl get pod -n frontend -l app=web-frontend -o jsonpath='{.items[0].metadata.name}') \
+     -- nslookup order-svc.backend.svc.cluster.local
+   ```
+
+   Expected output:
+
+   ```
+   Server:    10.0.0.10
+   Address 1: 10.0.0.10 kube-dns.kube-system.svc.cluster.local
+
+   Name:      order-svc.backend.svc.cluster.local
+   Address 1: 10.x.x.x order-svc.backend.svc.cluster.local
+   ```
+
+   > **What this proves:** The `web-frontend` Pod — in the `frontend` namespace — resolved the
+   > DNS name of a Service in a completely separate `backend` namespace. CoreDNS handled the
+   > lookup automatically. In a real microservice architecture, the frontend application code
+   > would use this exact FQDN (`order-svc.backend.svc.cluster.local:8080`) to make HTTP
+   > calls to the order processor — no IP addresses, no hardcoded node names. The ClusterIP
+   > Service is the stable, namespace-scoped endpoint that makes this possible.
+
+   > **Note:** If `nslookup` is not available in the nginx container, install it first:
+   > `kubectl exec -n frontend <pod-name> -- apt-get update && apt-get install -y dnsutils`
+
 ### Verify data persistence
 
-9. Exec into the running Pod and inspect the log file:
+10. Exec into the running Pod and inspect the log file:
 
    ```bash
    kubectl exec -n backend \
@@ -916,14 +944,14 @@ when a PVC is created.
 
    You should see several timestamped entries written by the container's loop.
 
-10. Delete the Pod to simulate a crash:
+11. Delete the Pod to simulate a crash:
 
    ```bash
    kubectl delete pod -n backend \
      $(kubectl get pod -n backend -l app=order-processor -o jsonpath='{.items[0].metadata.name}')
    ```
 
-11. Wait for the replacement Pod to start, then read the log file again:
+12. Wait for the replacement Pod to start, then read the log file again:
 
     ```bash
     kubectl get pods -n backend --watch
