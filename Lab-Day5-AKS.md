@@ -959,6 +959,14 @@ when a PVC is created.
       --for=condition=Ready --timeout=120s
     ```
 
+    Notice that the Pod name in the output is different from the one you deleted — for example:
+
+    ```
+    pod/order-processor-67bc5f8675-2dpzm condition met
+    ```
+
+    The suffix (`2dpzm`) is a new randomly generated hash, confirming this is a brand-new Pod, not the original one restarted. The Deployment controller created it from scratch.
+
     Once the command exits, read the log:
 
     ```bash
