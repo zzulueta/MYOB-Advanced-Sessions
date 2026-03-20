@@ -49,7 +49,12 @@ and namespace separation — that reflect production-ready cluster practices.
 ```
 RG-Lab5 (Resource Group)
 └── AKS Cluster (aks-lab5-yourname)
-    ├── System Node Pool (Standard_D2s_v3 × 1)  — kube-system workloads
+    ├── System Node Pool (Standard_D2s_v3 × 1)
+    │   └── Namespace: kube-system  (AKS-managed)
+    │       ├── CoreDNS
+    │       ├── metrics-server
+    │       └── cloud-controller-manager
+    │
     └── User Node Pool (Standard_D2s_v3 × 2)    — application workloads
         │
         ├── Namespace: frontend
@@ -57,17 +62,12 @@ RG-Lab5 (Resource Group)
         │   │   └── ReplicaSet → 2 × Pod
         │   └── Service: web-svc  (type: LoadBalancer → Azure Public IP)
         │
-        ├── Namespace: backend
-        │   ├── Deployment: order-processor
-        │   │   └── Pod → /data mount
-        │   ├── PersistentVolumeClaim: orders-pvc
-        │   │   └── PersistentVolume — Azure Managed Disk (Standard_LRS)
-        │   └── Service: order-svc  (type: ClusterIP — internal only)
-        │
-        └── Namespace: kube-system  (AKS-managed)
-            ├── CoreDNS
-            ├── metrics-server
-            └── cloud-controller-manager
+        └── Namespace: backend
+            ├── Deployment: order-processor
+            │   └── Pod → /data mount
+            ├── PersistentVolumeClaim: orders-pvc
+            │   └── PersistentVolume — Azure Managed Disk (Standard_LRS)
+            └── Service: order-svc  (type: ClusterIP — internal only)
 ```
 
 ## Job Skills
