@@ -519,6 +519,16 @@ traffic across all healthy Pods matching its selector. A Service of type
    EOF
    ```
 
+   > **What this manifest does:** It creates a Service named `web-svc` in the `frontend`
+   > namespace of type `LoadBalancer`. The `selector` matches any Pod labelled
+   > `app: web-frontend` — the same label the Deployment applies to its Pods. Kubernetes
+   > uses this selector to build an Endpoints list and load-balance incoming traffic across
+   > all matching Pods. The `port: 80` is the port the Azure Load Balancer listens on
+   > externally; `targetPort: 80` is the port inside each Pod (where nginx is listening).
+   > Because the type is `LoadBalancer`, AKS instructs the Azure cloud-controller-manager
+   > to provision a public Azure Load Balancer and assign it a public IP — which becomes
+   > the Service's `EXTERNAL-IP`.
+
 2. Apply the manifest:
 
    ```bash
