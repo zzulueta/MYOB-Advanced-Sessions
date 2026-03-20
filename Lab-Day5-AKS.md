@@ -1043,9 +1043,31 @@ consume. This prevents one team's workload from starving another's on a shared c
    kubectl describe resourcequota frontend-quota -n frontend
    ```
 
-   The output shows how much of the quota is consumed by the running `web-frontend`
-   Pods. The two Pods combined request 200m CPU and 128Mi memory, well within the
-   500m / 256Mi request quota.
+   Expected output:
+
+   ```
+   Name:            frontend-quota
+   Namespace:       frontend
+   Resource         Used   Hard
+   --------         ----   ----
+   limits.cpu       500m   1
+   limits.memory    256Mi  512Mi
+   pods             2      10
+   requests.cpu     200m   500m
+   requests.memory  128Mi  256Mi
+   ```
+
+   Each row is a resource dimension tracked by the quota:
+
+   | Row | Used | Hard | Explanation |
+   | --- | --- | --- | --- |
+   | `limits.cpu` | 500m | 1 | 2 Pods × 250m limit each = 500m. Hard cap is 1 full CPU core (1000m). |
+   | `limits.memory` | 256Mi | 512Mi | 2 Pods × 128Mi limit each = 256Mi. |
+   | `pods` | 2 | 10 | 2 Pods running in the namespace. Quota allows up to 10. |
+   | `requests.cpu` | 200m | 500m | 2 Pods × 100m request each = 200m. This is what the scheduler reserves on the node. |
+   | `requests.memory` | 128Mi | 256Mi | 2 Pods × 64Mi request each = 128Mi. |
+
+   > **Requests vs limits:** Requests are the guaranteed minimum — the scheduler will only place a Pod on a node that can satisfy them. Limits are the maximum allowed — exceeding the CPU limit causes throttling; exceeding the memory limit causes an OOM-kill. The quota enforces both independently, which is why both rows appear for CPU and memory.
 
 ### Horizontal Pod Autoscaler — scale out under load
 
