@@ -1167,7 +1167,7 @@ AKS deploys by default.
 
 ### Namespace isolation — verify inter-namespace network behaviour
 
-5. Confirm that the `backend` namespace cannot be reached from the internet. The
+6. Confirm that the `backend` namespace cannot be reached from the internet. The
    `order-svc` ClusterIP Service was never exposed as a LoadBalancer, so it has no
    public IP:
 
@@ -1178,20 +1178,6 @@ AKS deploys by default.
    The `order-svc` Service will show type **ClusterIP** with
    no external IP. This is intentional — the order processor is an internal service
    that should only be called by other Pods within the cluster, not exposed publicly.
-
-6. (Optional) Demonstrate inter-namespace DNS resolution. Exec into the frontend Pod
-   and resolve the backend Service by its FQDN:
-
-   ```bash
-   kubectl exec -n frontend \
-     $(kubectl get pod -n frontend -l app=web-frontend -o jsonpath='{.items[0].metadata.name}') \
-     -- getent hosts order-svc.backend.svc.cluster.local
-   ```
-
-   CoreDNS resolves the FQDN to the ClusterIP of `order-svc`. Network-level
-   isolation between namespaces requires **NetworkPolicy** objects (not covered
-   in this lab), but DNS isolation out of the box demonstrates the logical
-   separation that namespaces provide.
 
 ### Review cluster events
 
