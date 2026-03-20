@@ -558,8 +558,19 @@ traffic across all healthy Pods matching its selector. A Service of type
    kubectl describe service web-svc -n frontend
    ```
 
-   Note the **ClusterIP** field. This is the stable internal IP that other Pods inside
-   the cluster use to reach this Service. The Service is also reachable by DNS name:
+   Note the following fields in the output:
+   - **`IP`** — the Service's ClusterIP. This is the stable internal IP that other
+     Pods inside the cluster use to reach this Service.
+   - **`LoadBalancer Ingress`** — the public IP assigned by Azure (shown as `(VIP)`).
+     This is what you opened in the browser in step 4.
+   - **`NodePort`** — a port automatically allocated on every node. Kubernetes uses
+     this internally to route Load Balancer traffic from the Azure LB through each
+     node to the Pod. You do not need to use or open this port directly.
+   - **`Endpoints`** — the actual Pod IPs currently registered behind the Service
+     (one per running `web-frontend` Pod). If a Pod is unhealthy, its IP is removed
+     from this list automatically.
+
+   The Service is also reachable inside the cluster by DNS name:
 
    ```
    web-svc.frontend.svc.cluster.local
