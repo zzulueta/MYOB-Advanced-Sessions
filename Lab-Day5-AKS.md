@@ -972,26 +972,31 @@ when a PVC is created.
     automatically by the AKS cloud-node-manager. Data survived the Pod restart.
 
     > **What you should observe:** The log will contain all entries written before
-    > the Pod was deleted, followed by a visible **gap in timestamps** — the period
-    > when the Pod was dead and the container was restarting. After the gap, new entries
-    > resume from the replacement Pod. For example:
+    > the Pod was deleted, followed by new entries from the replacement Pod. For example:
     >
     > ```
-    > order written at Thu Mar 20 04:10:00 UTC 2026
-    > order written at Thu Mar 20 04:10:02 UTC 2026
-    > order written at Thu Mar 20 04:10:04 UTC 2026
-    > order written at Thu Mar 20 04:10:06 UTC 2026
-    > order written at Thu Mar 20 04:10:18 UTC 2026
-    > order written at Thu Mar 20 04:10:20 UTC 2026
+    > order written at Fri Mar 20 07:45:16 UTC 2026
+    > order written at Fri Mar 20 07:45:18 UTC 2026
+    > order written at Fri Mar 20 07:45:20 UTC 2026
+    > order written at Fri Mar 20 07:45:22 UTC 2026
+    > order written at Fri Mar 20 07:45:24 UTC 2026
     > ```
     >
-    > The gap (~12 seconds in this example) is the period when the Pod was terminating
-    > and the replacement container was starting. The size of the gap depends on whether
-    > Kubernetes scheduled the replacement on the **same node** (disk remounts in a few
-    > seconds — smaller gap) or a **different node** (disk must detach and reattach —
-    > larger gap of ~45 seconds). Either way, the absence of entries during the gap
-    > proves the loop genuinely stopped — and the presence of all earlier entries proves
-    > the disk data was not lost. This is the core proof of persistence that PVCs provide.
+    > This proves persistence — a completely different Pod (you can see the new Pod name
+    > in the `kubectl wait` output) is reading and continuing to write to the exact same
+    > file. All prior entries survived the Pod deletion.
+    >
+    > Depending on whether Kubernetes scheduled the replacement on the **same node** or a
+    > **different node**, the gap behaviour differs:
+    > - **Same node** (common in a 2-node lab cluster): the disk remounts in under a second
+    >   and busybox restarts in under 2 seconds — the gap may be imperceptible, or visible
+    >   only as a single 1-second interval instead of 2 seconds between two adjacent entries.
+    > - **Different node**: the Azure Managed Disk must detach and reattach (~30–45 seconds)
+    >   — a clear gap of many missing entries will be visible.
+    >
+    > Either way, the key evidence is: (1) all entries written by the old Pod are still
+    > present, and (2) writing resumed under a new Pod name. That is the core proof that
+    > PVCs decouple data from the Pod lifecycle.
 
 ---
 
