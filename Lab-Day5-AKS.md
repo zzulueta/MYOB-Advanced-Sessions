@@ -1082,7 +1082,7 @@ AKS deploys by default.
      --namespace frontend \
      --min 2 \
      --max 5 \
-     --cpu-percent 50
+     --cpu 50%
    ```
 
 4. Check the HPA status:
