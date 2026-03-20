@@ -1091,14 +1091,56 @@ AKS deploys by default.
    kubectl get hpa -n frontend
    ```
 
-   The **TARGETS** column shows current CPU utilisation vs the 50% threshold.
-   Under normal lab conditions the load is near zero, so the HPA will maintain
-   the minimum of 2 replicas. In production, a load test would trigger scale-out.
+   Expected output:
+
+   ```
+   NAME           REFERENCE                 TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+   web-frontend   Deployment/web-frontend   cpu: 1%/50%   2         5         2          3m7s
+   ```
+
+   The **TARGETS** column shows current CPU utilisation vs the 50% threshold (`1%/50%`
+   means 1% actual vs 50% target). Under idle lab conditions utilisation is near zero,
+   so the HPA maintains the minimum of 2 replicas. In production, a load test would
+   drive utilisation above 50% and trigger scale-out up to the maximum of 5 replicas.
+
+   > **Note:** If you run this command immediately after creating the HPA, TARGETS may
+   > show `<unknown>/50%` for the first 60–90 seconds while the metrics-server collects
+   > its first CPU sample. Re-run after a minute to see the actual value.
 
    > **HPA and ResourceQuota interaction:** The HPA can only scale up to the point
    > where the ResourceQuota permits additional Pods. If the quota is exhausted, the
    > HPA will not be able to add replicas and will log a warning event. Always
    > size your quota to accommodate the maximum target replica count.
+
+5. **(Optional) Trigger scale-out by generating load.** Run a busybox Pod in a tight
+   HTTP loop against the frontend Service to push CPU above the 50% threshold:
+
+   ```bash
+   kubectl run load-generator \
+     --image=busybox:1.36 \
+     --namespace frontend \
+     --restart=Never \
+     -- /bin/sh -c "while true; do wget -q -O- http://web-svc.frontend.svc.cluster.local; done"
+   ```
+
+   Then watch the HPA react in the same shell (refreshes every 15 seconds):
+
+   ```bash
+   kubectl get hpa -n frontend --watch
+   ```
+
+   Within 1–2 minutes the **TARGETS** utilisation will climb above 50% and you will
+   see **REPLICAS** increment from 2 toward 5 as the HPA scales out. Press `Ctrl+C`
+   to stop watching.
+
+   Delete the load generator when done:
+
+   ```bash
+   kubectl delete pod load-generator -n frontend
+   ```
+
+   The HPA will scale back down to 2 replicas after the CPU cooldown period
+   (default 5 minutes).
 
 ### Namespace isolation — verify inter-namespace network behaviour
 
