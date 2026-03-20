@@ -909,17 +909,13 @@ when a PVC is created.
    ```bash
    kubectl exec -n frontend \
      $(kubectl get pod -n frontend -l app=web-frontend -o jsonpath='{.items[0].metadata.name}') \
-     -- nslookup order-svc.backend.svc.cluster.local
+     -- getent hosts order-svc.backend.svc.cluster.local
    ```
 
    Expected output:
 
    ```
-   Server:    10.0.0.10
-   Address 1: 10.0.0.10 kube-dns.kube-system.svc.cluster.local
-
-   Name:      order-svc.backend.svc.cluster.local
-   Address 1: 10.x.x.x order-svc.backend.svc.cluster.local
+   10.x.x.x    order-svc.backend.svc.cluster.local
    ```
 
    > **What this proves:** The `web-frontend` Pod — in the `frontend` namespace — resolved the
@@ -929,8 +925,9 @@ when a PVC is created.
    > calls to the order processor — no IP addresses, no hardcoded node names. The ClusterIP
    > Service is the stable, namespace-scoped endpoint that makes this possible.
 
-   > **Note:** If `nslookup` is not available in the nginx container, install it first:
-   > `kubectl exec -n frontend <pod-name> -- apt-get update && apt-get install -y dnsutils`
+   > **Note:** `getent hosts` uses the container's built-in libc resolver and is available
+   > in all Linux containers without installing any additional tools. It is equivalent to
+   > what application code does when it resolves a hostname at runtime.
 
 ### Verify data persistence
 
@@ -1076,11 +1073,8 @@ AKS deploys by default.
    ```bash
    kubectl exec -n frontend \
      $(kubectl get pod -n frontend -l app=web-frontend -o jsonpath='{.items[0].metadata.name}') \
-     -- nslookup order-svc.backend.svc.cluster.local
+     -- getent hosts order-svc.backend.svc.cluster.local
    ```
-
-   > If `nslookup` is not available in the nginx container, install it with
-   > `apt-get update && apt-get install -y dnsutils` first, or skip this step.
 
    CoreDNS resolves the FQDN to the ClusterIP of `order-svc`. Network-level
    isolation between namespaces requires **NetworkPolicy** objects (not covered
