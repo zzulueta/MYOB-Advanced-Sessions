@@ -750,7 +750,7 @@ when a PVC is created.
    Two binding mode behaviours to note:
    - **`WaitForFirstConsumer`** (all disk classes): the Azure Managed Disk is not provisioned
      until a Pod is actually scheduled on a node. This is why the PVC shows **Pending** after
-     step 3 — the disk only materialises when the `order-processor` Pod starts in step 8.
+     step 3 of this task — the disk only materialises when the `order-processor` Pod starts in step 8.
    - **`Immediate`** (all file classes): the Azure Files share is provisioned as soon as the
      PVC is applied, before any Pod requests it.
 
@@ -845,6 +845,15 @@ when a PVC is created.
    EOF
    ```
 
+   > **What this manifest does:** It creates a Deployment named `order-processor` in
+   > the `backend` namespace with `replicas: 1` — one Pod, intentionally, because the
+   > `managed-csi` PVC is `ReadWriteOnce` and can only attach to one node at a time.
+   > The `busybox` container runs a shell loop that appends a timestamped line to
+   > `/data/orders.log` every 10 seconds, simulating a stateful workload writing to
+   > persistent storage. The `volumeMounts` section mounts the `orders-pvc` PVC at
+   > `/data` inside the container — any file written there is stored on the Azure
+   > Managed Disk, not in the container's ephemeral layer.
+
 6. Apply the Deployment:
 
    ```bash
@@ -871,6 +880,15 @@ when a PVC is created.
    EOF
    kubectl apply -f order-svc.yaml
    ```
+
+   > **What this manifest does:** It creates a ClusterIP Service named `order-svc` in the
+   > `backend` namespace. The `selector: app: order-processor` ties the Service to the
+   > `order-processor` Pods. Because the type is `ClusterIP`, the Service is only reachable
+   > inside the cluster — no external IP is assigned. Other Pods (for example, the
+   > `web-frontend` Pods) can call the order processor using the stable DNS name
+   > `order-svc.backend.svc.cluster.local:8080` without needing to know which node or IP
+   > the Pod is running on. This is the standard pattern for internal microservice
+   > communication in Kubernetes.
 
    Confirm the Service was created:
 
@@ -918,6 +936,25 @@ when a PVC is created.
     The log file contains all entries from before the Pod was deleted. The Azure
     Managed Disk was detached from the old node and reattached to the new node
     automatically by the AKS cloud-node-manager. Data survived the Pod restart.
+
+    > **What you should observe:** The log will contain all entries written before
+    > the Pod was deleted, followed by a visible **gap in timestamps** — the period
+    > when the Pod was dead and the disk was being detached and reattached. After the
+    > gap, new entries resume from the replacement Pod. For example:
+    >
+    > ```
+    > order written at Thu Mar 20 04:10:00 UTC 2026
+    > order written at Thu Mar 20 04:10:10 UTC 2026
+    > order written at Thu Mar 20 04:10:20 UTC 2026
+    > order written at Thu Mar 20 04:11:05 UTC 2026
+    > order written at Thu Mar 20 04:11:15 UTC 2026
+    > ```
+    >
+    > The gap (~45 seconds in this example) reflects three phases: Pod termination,
+    > disk detach from the old node, disk reattach to the new node, and container
+    > start. The absence of entries during the gap proves the loop genuinely stopped
+    > — and the presence of all earlier entries proves the disk data was not lost.
+    > This is the core proof of persistence that PVCs provide.
 
 ---
 
