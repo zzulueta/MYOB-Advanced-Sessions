@@ -127,6 +127,13 @@ cost; you pay only for the agent nodes that run your workloads.
 
    Select **Update** to save the node pool changes.
 
+   > **Why these counts?** The **agentpool** (System) runs only AKS system components
+   > such as CoreDNS, Cilium, and the CSI drivers — one node is sufficient for a lab.
+   > The **userpool** (User) is where your application Pods land. Two nodes are needed
+   > so the Kubernetes scheduler can spread the two `web-frontend` replicas across
+   > separate nodes, demonstrating fault tolerance: if one user node goes down, the
+   > other replica on the remaining node keeps the application available.
+
 4. Select the **Networking** tab and review:
 
    | Setting | Value |
