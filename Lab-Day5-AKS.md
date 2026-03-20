@@ -550,9 +550,37 @@ traffic across all healthy Pods matching its selector. A Service of type
    by nginx, and publicly accessible through the Azure Load Balancer. This confirms
    that the ConfigMap volume mount replaced nginx's default `index.html` correctly.
 
+### Verify Service resilience
+
+5. Delete one of the running Pods to verify the website stays up:
+
+   ```bash
+   kubectl delete pod -n frontend $(kubectl get pod -n frontend -l app=web-frontend -o jsonpath='{.items[0].metadata.name}')
+   ```
+
+6. Immediately refresh the browser tab with the external IP. The **Retail Order Entry**
+   page should still load without any error. The Azure Load Balancer detects the Pod
+   is gone and routes all traffic to the remaining Pod within seconds. Meanwhile,
+   the Deployment controller schedules a replacement Pod.
+
+7. Confirm the replacement Pod has started:
+
+   ```bash
+   kubectl get pods -n frontend
+   ```
+
+   You should see the old Pod terminating and a new Pod entering `ContainerCreating`
+   → `Running`. Within a few seconds both Pods are Running again.
+
+   > **Why this works:** The `web-svc` LoadBalancer Service tracks healthy Pod
+   > endpoints continuously. When a Pod is deleted, it is immediately removed from
+   > the Endpoints list and the Load Balancer stops sending traffic to it — before the
+   > Pod is even fully terminated. The second Pod absorbs all traffic with no
+   > downtime. This is the same mechanism that makes rolling updates zero-downtime.
+
 ### Understand Service DNS
 
-5. Examine the Service details:
+8. Examine the Service details:
 
    ```bash
    kubectl describe service web-svc -n frontend
