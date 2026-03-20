@@ -149,12 +149,13 @@ cost; you pay only for the agent nodes that run your workloads.
    | --- | --- |
    | Enable Container Logs | **Off** (disables Container Insights) |
    | Enable Prometheus metrics | **Off** (otherwise Azure creates a Monitor workspace + Grafana instance) |
-   | Enable Azure Managed Grafana | **Off** |
+   | Enable Managed Grafana | **Off** |
+   | Enable recommended alert rules | **Off** (uncheck the checkbox) |
 
-   > **Why this matters:** Leaving Prometheus and Grafana enabled causes Azure to
-   > automatically provision ~15 extra resources (Azure Monitor workspace, Azure
-   > Managed Grafana, multiple Prometheus rule groups, data collection rules, and
-   > metric alert rules). For this lab you only need the Kubernetes service itself.
+   > **Why this matters:** Leaving these options enabled causes Azure to automatically
+   > provision extra resources — an Azure Monitor workspace, Azure Managed Grafana,
+   > Prometheus rule groups, data collection rules, metric alert rules, and email
+   > alert notifications. For this lab you only need the Kubernetes service itself.
 
 6. Select **Review + Create**, then **Create**. Provisioning takes 4–6 minutes.
 
