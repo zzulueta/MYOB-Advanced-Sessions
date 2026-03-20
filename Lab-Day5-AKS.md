@@ -640,6 +640,15 @@ strategy for Kubernetes Deployments.
      -n frontend
    ```
 
+   Then annotate the Deployment with a human-readable change cause — this is how
+   Kubernetes records *why* a revision was made in the rollout history:
+
+   ```bash
+   kubectl annotate deployment/web-frontend \
+     kubernetes.io/change-cause="Update nginx to 1.27" \
+     -n frontend
+   ```
+
 2. Immediately watch the rollout progress:
 
    ```bash
@@ -671,8 +680,18 @@ strategy for Kubernetes Deployments.
    kubectl rollout history deployment/web-frontend -n frontend
    ```
 
-   Kubernetes records each revision. You will see **REVISION 1** (nginx:1.25) and
-   **REVISION 2** (nginx:1.27).
+   Kubernetes records each revision. Expected output:
+
+   ```
+   REVISION  CHANGE-CAUSE
+   1         <none>
+   2         Update nginx to 1.27
+   ```
+
+   REVISION 1 shows `<none>` because no annotation was set when the Deployment was
+   first created. REVISION 2 shows the cause you just annotated. In production,
+   teams typically add the annotation immediately after every `kubectl set image`
+   or commit reference to make audit history meaningful.
 
 ### Roll back to the previous version
 
