@@ -824,6 +824,7 @@ when a PVC is created.
          labels:
            app: order-processor
        spec:
+         terminationGracePeriodSeconds: 0
          containers:
            - name: processor
              image: busybox:1.36
@@ -849,10 +850,12 @@ when a PVC is created.
    > the `backend` namespace with `replicas: 1` — one Pod, intentionally, because the
    > `managed-csi` PVC is `ReadWriteOnce` and can only attach to one node at a time.
    > The `busybox` container runs a shell loop that appends a timestamped line to
-   > `/data/orders.log` every 10 seconds, simulating a stateful workload writing to
+   > `/data/orders.log` every 2 seconds, simulating a stateful workload writing to
    > persistent storage. The `volumeMounts` section mounts the `orders-pvc` PVC at
    > `/data` inside the container — any file written there is stored on the Azure
-   > Managed Disk, not in the container's ephemeral layer.
+   > Managed Disk, not in the container's ephemeral layer. `terminationGracePeriodSeconds: 0`
+   > forces an immediate SIGKILL when the Pod is deleted, ensuring the old writer stops
+   > instantly and the gap in the log is clearly visible.
 
 6. Apply the Deployment:
 
