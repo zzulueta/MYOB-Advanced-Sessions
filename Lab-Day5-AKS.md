@@ -191,10 +191,10 @@ cost; you pay only for the agent nodes that run your workloads.
    Expected output (three nodes in the **Ready** state):
 
    ```
-   NAME                                STATUS   ROLES   AGE     VERSION
-   aks-agentpool-12345678-vmss000000   Ready    agent   5m      v1.29.x
-   aks-userpool-12345678-vmss000000    Ready    agent   5m      v1.29.x
-   aks-userpool-12345678-vmss000001    Ready    agent   5m      v1.29.x
+   NAME                                STATUS   ROLES    AGE     VERSION
+   aks-agentpool-30245557-vmss000000   Ready    <none>   5m10s   v1.33.7
+   aks-userpool-30245557-vmss000000    Ready    <none>   5m6s    v1.33.7
+   aks-userpool-30245557-vmss000001    Ready    <none>   5m24s   v1.33.7
    ```
 
    > If you see **NotReady**, wait 60 seconds and re-run the command. Nodes may still
@@ -218,8 +218,13 @@ already provisioned inside the cluster.
    Scroll through the output and note:
    - **Allocatable** resources — the CPU and memory available to schedule Pods on
      this node (less than Capacity because the OS and AKS system daemons consume some)
-   - **Conditions** — Ready, MemoryPressure, DiskPressure, PIDPressure
-   - **System Info** — kernel version, container runtime (containerd), kubelet version
+   - **Conditions** — the standard Kubernetes conditions (Ready, MemoryPressure,
+     DiskPressure, PIDPressure) plus several AKS-specific conditions added by the
+     node-problem-detector (e.g. KernelDeadlock, FrequentContainerdRestart,
+     NetworkUnavailable). This is normal — all should show `False` or `True` for Ready.
+   - **System Info** — kernel version, container runtime (containerd), kubelet version.
+     Note: **Kube-Proxy Version** will be blank on clusters using the Cilium dataplane,
+     because Cilium replaces kube-proxy for service routing.
 
 ### Explore namespaces
 
