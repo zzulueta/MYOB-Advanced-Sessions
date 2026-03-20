@@ -650,6 +650,11 @@ strategy for Kubernetes Deployments.
    new Pod has passed its readiness check. This ensures there is always at least
    one Pod serving traffic during the update.
 
+   > **Tip:** While `kubectl rollout status` is streaming, switch to your browser
+   > tab with the external IP and keep refreshing. The **Retail Order Entry** page
+   > continues to load throughout the update — there is no downtime visible to the
+   > end user, even though Pods are being replaced underneath.
+
 3. Once the rollout completes, confirm both Pods are running the new image:
 
    ```bash
