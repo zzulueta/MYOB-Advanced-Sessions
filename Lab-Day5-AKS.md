@@ -735,16 +735,28 @@ when a PVC is created.
 
    Note the StorageClasses provided by AKS:
 
-   | StorageClass | Disk type | Reclaim policy | Use case |
+   | StorageClass | Provisioner | Binding mode | Use case |
    | --- | --- | --- | --- |
-   | `managed-csi` | Azure Standard SSD | Delete | General-purpose workloads (default) |
-   | `managed-csi-premium` | Azure Premium SSD | Delete | Latency-sensitive, high-IOPS workloads |
-   | `azurefile-csi` | Azure Files (SMB) | Delete | ReadWriteMany — multiple Pods sharing one volume |
-   | `azurefile-csi-premium` | Azure Files Premium | Delete | High-throughput shared file workloads |
+   | `default` **(default)** | disk.csi.azure.com | WaitForFirstConsumer | Cluster default — used when no StorageClass is specified in a PVC |
+   | `managed-csi` | disk.csi.azure.com | WaitForFirstConsumer | General-purpose Azure Standard SSD — recommended modern class |
+   | `managed-csi-premium` | disk.csi.azure.com | WaitForFirstConsumer | Azure Premium SSD — latency-sensitive, high-IOPS workloads |
+   | `azurefile-csi` | file.csi.azure.com | Immediate | Azure Files (SMB) — ReadWriteMany, multiple Pods sharing one volume |
+   | `azurefile-csi-premium` | file.csi.azure.com | Immediate | Azure Files Premium — high-throughput shared file workloads |
+   | `managed` | disk.csi.azure.com | WaitForFirstConsumer | Legacy alias — prefer `managed-csi` |
+   | `managed-premium` | disk.csi.azure.com | WaitForFirstConsumer | Legacy alias — prefer `managed-csi-premium` |
+   | `azurefile` | file.csi.azure.com | Immediate | Legacy alias — prefer `azurefile-csi` |
+   | `azurefile-premium` | file.csi.azure.com | Immediate | Legacy alias — prefer `azurefile-csi-premium` |
 
-   > **ReadWriteOnce vs ReadWriteMany:** Azure Managed Disks can only be attached
-   > to **one node** at a time (ReadWriteOnce). If your workload needs multiple Pods
-   > on different nodes to write to the same volume simultaneously, use
+   Two binding mode behaviours to note:
+   - **`WaitForFirstConsumer`** (all disk classes): the Azure Managed Disk is not provisioned
+     until a Pod is actually scheduled on a node. This is why the PVC shows **Pending** after
+     step 3 — the disk only materialises when the `order-processor` Pod starts in step 8.
+   - **`Immediate`** (all file classes): the Azure Files share is provisioned as soon as the
+     PVC is applied, before any Pod requests it.
+
+   > **ReadWriteOnce vs ReadWriteMany:** Azure Managed Disks (`disk.csi.azure.com`) can
+   > only be attached to **one node** at a time (ReadWriteOnce). If your workload needs
+   > multiple Pods on different nodes to write to the same volume simultaneously, use
    > `azurefile-csi` (ReadWriteMany via SMB).
 
 ### Create a PersistentVolumeClaim
