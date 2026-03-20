@@ -1116,13 +1116,26 @@ AKS deploys by default.
    HTTP loop against the frontend Service to push CPU above the 50% threshold:
 
    ```bash
-   kubectl run load-generator \
-     --image=busybox:1.36 \
-     --namespace frontend \
-     --restart=Never \
-     --requests='cpu=100m,memory=64Mi' \
-     --limits='cpu=200m,memory=128Mi' \
-     -- /bin/sh -c "while true; do wget -q -O- http://web-svc.frontend.svc.cluster.local; done"
+   kubectl apply -f - <<'EOF'
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: load-generator
+     namespace: frontend
+   spec:
+     restartPolicy: Never
+     containers:
+       - name: load-generator
+         image: busybox:1.36
+         command: ["/bin/sh", "-c", "while true; do wget -q -O- http://web-svc.frontend.svc.cluster.local; done"]
+         resources:
+           requests:
+             cpu: "100m"
+             memory: "64Mi"
+           limits:
+             cpu: "200m"
+             memory: "128Mi"
+   EOF
    ```
 
    Then watch the HPA react in the same shell (refreshes every 15 seconds):
