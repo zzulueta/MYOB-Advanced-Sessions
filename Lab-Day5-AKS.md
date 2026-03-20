@@ -49,13 +49,13 @@ and namespace separation — that reflect production-ready cluster practices.
 ```
 RG-Lab5 (Resource Group)
 └── AKS Cluster (aks-lab5-yourname)
-    ├── System Node Pool (Standard_D2s_v3 × 1)
+    ├── agentpool / System Node Pool (Standard_D2s_v3 × 1)
     │   └── Namespace: kube-system  (AKS-managed)
     │       ├── CoreDNS
     │       ├── metrics-server
     │       └── cloud-controller-manager
     │
-    └── User Node Pool (Standard_D2s_v3 × 2)    — application workloads
+    └── userpool / User Node Pool (Standard_D2s_v3 × 2)    — application workloads
         │
         ├── Namespace: frontend
         │   ├── Deployment: web-frontend  (nginx)
