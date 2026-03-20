@@ -780,6 +780,13 @@ when a PVC is created.
    EOF
    ```
 
+   > **What this manifest does:** It creates a PVC named `orders-pvc` in the `backend`
+   > namespace requesting 1 GiB of storage using the `managed-csi` StorageClass
+   > (Azure Standard SSD). The `accessModes: ReadWriteOnce` means the disk can be
+   > mounted by one node at a time — appropriate for the single-replica `order-processor`
+   > Deployment. Because `managed-csi` uses `WaitForFirstConsumer` binding, no Azure
+   > Managed Disk is provisioned yet — that happens when the Pod is scheduled in step 8.
+
 3. Apply it:
 
    ```bash
