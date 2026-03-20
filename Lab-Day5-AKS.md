@@ -256,9 +256,20 @@ already provisioned inside the cluster.
    | Component | Role |
    | --- | --- |
    | `coredns-*` | In-cluster DNS — resolves Service names to ClusterIP addresses |
+   | `coredns-autoscaler-*` | Adjusts CoreDNS replica count as the cluster grows |
    | `metrics-server-*` | Exposes resource metrics (CPU/memory) used by HPA and `kubectl top` |
    | `cloud-node-manager-*` | Integrates nodes with Azure (attaches Managed Disks, assigns LoadBalancer IPs) |
-   | `kube-proxy-*` | Programs iptables/IPVS rules on each node for Service traffic routing |
+   | `cilium-*` / `cilium-operator-*` | eBPF-based networking and service routing — replaces kube-proxy on this cluster |
+   | `azure-cns-*` | Azure Container Networking Service — manages pod IP allocation for CNI Overlay |
+   | `csi-azuredisk-node-*` | CSI driver that mounts Azure Managed Disks into Pods |
+   | `csi-azurefile-node-*` | CSI driver that mounts Azure Files shares into Pods |
+   | `konnectivity-agent-*` | Secure tunnel between the AKS control plane and agent nodes |
+   | `azure-policy-*` | Enforces Azure Policy rules inside the cluster |
+
+   > **Note:** You will see more Pods than listed above — AKS deploys additional
+   > components such as the workload-identity webhook (`azure-wi-webhook-*`) and the
+   > image-cleaner (`eraser-*`). All Pods should show **Running** status. A small
+   > number of recent restarts (1–2) on webhook Pods during startup is normal.
 
    > **Important:** Never delete or modify resources in `kube-system`. This namespace
    > is managed entirely by AKS. Changes may break cluster networking, DNS resolution,
