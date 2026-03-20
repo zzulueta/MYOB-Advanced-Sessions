@@ -342,6 +342,12 @@ so the page reflects the retail scenario rather than the generic nginx placehold
    EOF
    ```
 
+   > **What this manifest does:** It creates a ConfigMap named `web-frontend-html` in
+   > the `frontend` namespace with a single key, `index.html`, whose value is the full
+   > HTML page. Later, the Deployment mounts this key as a file at
+   > `/usr/share/nginx/html/index.html` inside the nginx container, replacing the
+   > default nginx placeholder page with the custom Retail Order Entry page.
+
 2. Apply the ConfigMap:
 
    ```bash
@@ -401,6 +407,14 @@ so the page reflects the retail scenario rather than the generic nginx placehold
                name: web-frontend-html
    EOF
    ```
+
+   > **What this manifest does:** It creates a Deployment named `web-frontend` in the
+   > `frontend` namespace with `replicas: 2` — meaning Kubernetes will always keep two
+   > Pods running. The `selector.matchLabels` ties the Deployment to Pods labelled
+   > `app: web-frontend`. Each Pod runs the `nginx:1.25` container with CPU and memory
+   > requests/limits set, and mounts the `web-frontend-html` ConfigMap as a file at
+   > `/usr/share/nginx/html/index.html` using `volumeMounts` + `subPath`, so nginx
+   > serves the custom page instead of its default placeholder.
 
 4. Apply the manifest:
 
