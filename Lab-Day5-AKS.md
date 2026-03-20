@@ -827,7 +827,7 @@ when a PVC is created.
          containers:
            - name: processor
              image: busybox:1.36
-             command: ["/bin/sh", "-c", "while true; do echo \"order written at $(date)\" >> /data/orders.log; sleep 10; done"]
+             command: ["/bin/sh", "-c", "while true; do echo \"order written at $(date)\" >> /data/orders.log; sleep 2; done"]
              resources:
                requests:
                  cpu: "50m"
@@ -964,22 +964,25 @@ when a PVC is created.
 
     > **What you should observe:** The log will contain all entries written before
     > the Pod was deleted, followed by a visible **gap in timestamps** — the period
-    > when the Pod was dead and the disk was being detached and reattached. After the
-    > gap, new entries resume from the replacement Pod. For example:
+    > when the Pod was dead and the container was restarting. After the gap, new entries
+    > resume from the replacement Pod. For example:
     >
     > ```
     > order written at Thu Mar 20 04:10:00 UTC 2026
-    > order written at Thu Mar 20 04:10:10 UTC 2026
+    > order written at Thu Mar 20 04:10:02 UTC 2026
+    > order written at Thu Mar 20 04:10:04 UTC 2026
+    > order written at Thu Mar 20 04:10:06 UTC 2026
+    > order written at Thu Mar 20 04:10:18 UTC 2026
     > order written at Thu Mar 20 04:10:20 UTC 2026
-    > order written at Thu Mar 20 04:11:05 UTC 2026
-    > order written at Thu Mar 20 04:11:15 UTC 2026
     > ```
     >
-    > The gap (~45 seconds in this example) reflects three phases: Pod termination,
-    > disk detach from the old node, disk reattach to the new node, and container
-    > start. The absence of entries during the gap proves the loop genuinely stopped
-    > — and the presence of all earlier entries proves the disk data was not lost.
-    > This is the core proof of persistence that PVCs provide.
+    > The gap (~12 seconds in this example) is the period when the Pod was terminating
+    > and the replacement container was starting. The size of the gap depends on whether
+    > Kubernetes scheduled the replacement on the **same node** (disk remounts in a few
+    > seconds — smaller gap) or a **different node** (disk must detach and reattach —
+    > larger gap of ~45 seconds). Either way, the absence of entries during the gap
+    > proves the loop genuinely stopped — and the presence of all earlier entries proves
+    > the disk data was not lost. This is the core proof of persistence that PVCs provide.
 
 ---
 
