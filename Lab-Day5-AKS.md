@@ -588,6 +588,12 @@ traffic across all healthy Pods matching its selector. A Service of type
 | **LoadBalancer** | Public internet or internal VNet | Azure Public (or Internal) Load Balancer | External-facing applications |
 | **ExternalName** | DNS alias to external FQDN | None | Routing to external services by DNS |
 
+> **In summary:** Use **ClusterIP** for internal pod-to-pod traffic (the default — no
+> external exposure). Use **LoadBalancer** when you need a public endpoint (Azure
+> provisions the LB automatically — this is what `web-svc` uses). **NodePort** is a
+> lightweight alternative for testing without a cloud LB. **ExternalName** is a
+> DNS-only alias for reaching services outside the cluster by a stable internal name.
+
 ---
 
 ## Task 5: Perform a Rolling Update and Observe Zero-Downtime Behaviour
