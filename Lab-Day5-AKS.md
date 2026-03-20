@@ -1140,7 +1140,7 @@ AKS deploys by default.
    EOF
    ```
 
-   Then watch the HPA react in the same shell (refreshes every 15 seconds):
+   Then watch the HPA react in the same shell (updates are event-driven — a new line appears whenever the HPA resource changes):
 
    ```bash
    kubectl get hpa -n frontend --watch
