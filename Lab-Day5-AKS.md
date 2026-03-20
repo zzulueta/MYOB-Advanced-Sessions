@@ -1077,12 +1077,15 @@ AKS deploys by default.
 
 3. Apply an HPA to the `web-frontend` Deployment:
 
+   > **Note:** If you already created an HPA in a previous attempt, delete it first:
+   > `kubectl delete hpa web-frontend -n frontend`
+
    ```bash
    kubectl autoscale deployment web-frontend \
      --namespace frontend \
      --min 2 \
      --max 5 \
-     --cpu 50%
+     --cpu 10%
    ```
 
 4. Check the HPA status:
@@ -1095,16 +1098,18 @@ AKS deploys by default.
 
    ```
    NAME           REFERENCE                 TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
-   web-frontend   Deployment/web-frontend   cpu: 1%/50%   2         5         2          3m7s
+   web-frontend   Deployment/web-frontend   cpu: 1%/10%   2         5         2          3m7s
    ```
 
-   The **TARGETS** column shows current CPU utilisation vs the 50% threshold (`1%/50%`
-   means 1% actual vs 50% target). Under idle lab conditions utilisation is near zero,
-   so the HPA maintains the minimum of 2 replicas. In production, a load test would
-   drive utilisation above 50% and trigger scale-out up to the maximum of 5 replicas.
+   The **TARGETS** column shows current CPU utilisation vs the 10% threshold (`1%/10%`
+   means 1% actual vs 10% target). Under idle lab conditions utilisation is near zero,
+   so the HPA maintains the minimum of 2 replicas. The 10% threshold is set low
+   deliberately so the load test in the next step can push above it — nginx serving
+   a small static HTML page is very CPU-efficient, and a higher threshold would be
+   difficult to breach in a lab environment.
 
    > **Note:** If you run this command immediately after creating the HPA, TARGETS may
-   > show `<unknown>/50%` for the first 60–90 seconds while the metrics-server collects
+   > show `<unknown>/10%` for the first 60–90 seconds while the metrics-server collects
    > its first CPU sample. Re-run after a minute to see the actual value.
 
    > **HPA and ResourceQuota interaction:** The HPA can only scale up to the point
@@ -1144,7 +1149,7 @@ AKS deploys by default.
    kubectl get hpa -n frontend --watch
    ```
 
-   Within 1–2 minutes the **TARGETS** utilisation will climb above 50% and you will
+   Within 1–2 minutes the **TARGETS** utilisation will climb above 10% and you will
    see **REPLICAS** increment from 2 toward 5 as the HPA scales out. Press `Ctrl+C`
    to stop watching.
 
