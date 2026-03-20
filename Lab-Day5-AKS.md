@@ -1120,6 +1120,8 @@ AKS deploys by default.
      --image=busybox:1.36 \
      --namespace frontend \
      --restart=Never \
+     --requests='cpu=100m,memory=64Mi' \
+     --limits='cpu=200m,memory=128Mi' \
      -- /bin/sh -c "while true; do wget -q -O- http://web-svc.frontend.svc.cluster.local; done"
    ```
 
