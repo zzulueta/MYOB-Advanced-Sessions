@@ -187,12 +187,13 @@ cost; you pay only for the agent nodes that run your workloads.
    kubectl get nodes
    ```
 
-   Expected output (two nodes in the **Ready** state):
+   Expected output (three nodes in the **Ready** state):
 
    ```
    NAME                                STATUS   ROLES   AGE     VERSION
    aks-agentpool-12345678-vmss000000   Ready    agent   5m      v1.29.x
-   aks-agentpool-12345678-vmss000001   Ready    agent   5m      v1.29.x
+   aks-userpool-12345678-vmss000000    Ready    agent   5m      v1.29.x
+   aks-userpool-12345678-vmss000001    Ready    agent   5m      v1.29.x
    ```
 
    > If you see **NotReady**, wait 60 seconds and re-run the command. Nodes may still
@@ -714,7 +715,34 @@ when a PVC is created.
    kubectl apply -f order-processor-deployment.yaml
    ```
 
-7. Wait for the Pod to reach Running status (the disk provisioning adds ~30 seconds):
+7. Create a ClusterIP Service so other Pods inside the cluster can reach the order-processor by DNS name:
+
+   ```bash
+   cat <<'EOF' > order-svc.yaml
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: order-svc
+     namespace: backend
+   spec:
+     type: ClusterIP
+     selector:
+       app: order-processor
+     ports:
+       - protocol: TCP
+         port: 8080
+         targetPort: 8080
+   EOF
+   kubectl apply -f order-svc.yaml
+   ```
+
+   Confirm the Service was created:
+
+   ```bash
+   kubectl get service order-svc -n backend
+   ```
+
+8. Wait for the Pod to reach Running status (the disk provisioning adds ~30 seconds):
 
    ```bash
    kubectl get pods -n backend --watch
@@ -724,7 +752,7 @@ when a PVC is created.
 
 ### Verify data persistence
 
-8. Exec into the running Pod and inspect the log file:
+9. Exec into the running Pod and inspect the log file:
 
    ```bash
    kubectl exec -n backend \
@@ -734,14 +762,14 @@ when a PVC is created.
 
    You should see several timestamped entries written by the container's loop.
 
-9. Delete the Pod to simulate a crash:
+10. Delete the Pod to simulate a crash:
 
    ```bash
    kubectl delete pod -n backend \
      $(kubectl get pod -n backend -l app=order-processor -o jsonpath='{.items[0].metadata.name}')
    ```
 
-10. Wait for the replacement Pod to start, then read the log file again:
+11. Wait for the replacement Pod to start, then read the log file again:
 
     ```bash
     kubectl get pods -n backend --watch
@@ -837,7 +865,7 @@ AKS deploys by default.
    kubectl get service -n backend
    ```
 
-   The `order-svc` Service (if you created one) will show type **ClusterIP** with
+   The `order-svc` Service will show type **ClusterIP** with
    no external IP. This is intentional — the order processor is an internal service
    that should only be called by other Pods within the cluster, not exposed publicly.
 
