@@ -1077,9 +1077,6 @@ AKS deploys by default.
 
 3. Apply an HPA to the `web-frontend` Deployment:
 
-   > **Note:** If you already created an HPA in a previous attempt, delete it first:
-   > `kubectl delete hpa web-frontend -n frontend`
-
    ```bash
    kubectl autoscale deployment web-frontend \
      --namespace frontend \
@@ -1118,7 +1115,7 @@ AKS deploys by default.
    > size your quota to accommodate the maximum target replica count.
 
 5. **(Optional) Trigger scale-out by generating load.** Run a busybox Pod in a tight
-   HTTP loop against the frontend Service to push CPU above the 50% threshold:
+   HTTP loop against the frontend Service to push CPU above the 10% threshold:
 
    ```bash
    kubectl apply -f - <<'EOF'
@@ -1150,8 +1147,14 @@ AKS deploys by default.
    ```
 
    Within 1–2 minutes the **TARGETS** utilisation will climb above 10% and you will
-   see **REPLICAS** increment from 2 toward 5 as the HPA scales out. Press `Ctrl+C`
-   to stop watching.
+   see **REPLICAS** increment from 2 toward 5 as the HPA scales out. For example:
+
+   ```
+   NAME           REFERENCE                 TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+   web-frontend   Deployment/web-frontend   cpu: 12%/10%   2         5         3          49s
+   ```
+
+   Press `Ctrl+C` to stop watching.
 
    Delete the load generator when done:
 
