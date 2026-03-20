@@ -902,10 +902,11 @@ when a PVC is created.
 8. Wait for the Pod to reach Running status (the disk provisioning adds ~30 seconds):
 
    ```bash
-   kubectl get pods -n backend --watch
+   kubectl wait pod -n backend -l app=order-processor \
+     --for=condition=Ready --timeout=120s
    ```
 
-   Press `Ctrl+C` once the Pod shows **Running**.
+   The command exits automatically once the Pod is Ready. No `Ctrl+C` needed.
 
 9. Simulate the `web-frontend` Pods connecting to the `order-processor` via the ClusterIP Service. Exec into one of the frontend Pods and resolve the backend Service DNS name:
 
@@ -954,8 +955,13 @@ when a PVC is created.
 12. Wait for the replacement Pod to start, then read the log file again:
 
     ```bash
-    kubectl get pods -n backend --watch
-    # Press Ctrl+C once Running, then:
+    kubectl wait pod -n backend -l app=order-processor \
+      --for=condition=Ready --timeout=120s
+    ```
+
+    Once the command exits, read the log:
+
+    ```bash
     kubectl exec -n backend \
       $(kubectl get pod -n backend -l app=order-processor -o jsonpath='{.items[0].metadata.name}') \
       -- cat /data/orders.log
