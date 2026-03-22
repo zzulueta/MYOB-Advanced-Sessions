@@ -144,7 +144,6 @@ graph TD
     CM -->|volume mount /usr/share/nginx/html| WD
     HPA -->|scales replicas| WD
     Metrics -->|CPU metrics| HPA
-    RQ -->|caps CPU + memory| FE
     WD -.->|DNS: order-svc.backend.svc.cluster.local| OS
     OS --> OD
     OD --> PVC
