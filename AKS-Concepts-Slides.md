@@ -120,8 +120,11 @@ graph TD
             end
 
             subgraph FE["Namespace: frontend"]
+                CM["ConfigMap: frontend-html\n(custom index.html)"]
                 WD["Deployment: web-frontend\nnginx × 2 Pods"]
                 WS["Service: web-svc\ntype: LoadBalancer"]
+                HPA["HorizontalPodAutoscaler\nmin:2 max:5 cpu:10%"]
+                RQ["ResourceQuota\nfrontend-quota"]
             end
 
             subgraph BE["Namespace: backend"]
@@ -138,6 +141,10 @@ graph TD
     Internet -->|HTTP| LB
     LB --> WS
     WS --> WD
+    CM -->|volume mount /usr/share/nginx/html| WD
+    HPA -->|scales replicas| WD
+    Metrics -->|CPU metrics| HPA
+    RQ -->|caps CPU + memory| FE
     WD -.->|DNS: order-svc.backend.svc.cluster.local| OS
     OS --> OD
     OD --> PVC
