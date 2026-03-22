@@ -70,6 +70,52 @@ RG-Lab5 (Resource Group)
             └── Service: order-svc  (type: ClusterIP — internal only)
 ```
 
+```mermaid
+graph TD
+    Internet["🌐 Internet\n(Your Browser)"]
+    
+    subgraph RG["RG-Lab5 (Resource Group)"]
+        subgraph AKS["AKS Cluster — aks-lab5-yourname"]
+
+            subgraph SYS["System Node Pool"]
+                CoreDNS["CoreDNS"]
+                Metrics["metrics-server"]
+                CCM["cloud-controller-manager"]
+            end
+
+            subgraph FE["Namespace: frontend"]
+                CM["ConfigMap: frontend-html\n(custom index.html)"]
+                WD["Deployment: web-frontend\nnginx × 2 Pods"]
+                WS["Service: web-svc\ntype: LoadBalancer"]
+                HPA["HorizontalPodAutoscaler\nmin:2 max:5 cpu:10%"]
+                RQ["ResourceQuota\nfrontend-quota"]
+            end
+
+            subgraph BE["Namespace: backend"]
+                OD["Deployment:\norder-processor · 1 Pod"]
+                OS["Service: order-svc\ntype: ClusterIP"]
+                PVC["PersistentVolumeClaim\norders-pvc"]
+                DISK["☁️ Azure Managed Disk\nStandard SSD"]
+            end
+        end
+
+        LB["☁️ Azure Public\nLoad Balancer"]
+    end
+
+    Internet -->|HTTP| LB
+    LB --> WS
+    WS --> WD
+    CM -->|volume mount| WD
+    HPA -->|scales replicas| WD
+    Metrics -->|CPU metrics| HPA
+    WD -.->|DNS lookup| OS
+    OS --> OD
+    OD --> PVC
+    PVC --> DISK
+    CoreDNS -.->|resolves| WS
+    CoreDNS -.->|resolves| OS
+```
+
 ## Job Skills
 
 - Task 1: Provision an AKS cluster and connect with kubectl
