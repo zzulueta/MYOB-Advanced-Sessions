@@ -128,7 +128,7 @@ graph TD
             end
 
             subgraph BE["Namespace: backend"]
-                OD["Deployment: order-processor\n1 Pod"]
+                OD["Deployment:\norder-processor · 1 Pod"]
                 OS["Service: order-svc\ntype: ClusterIP"]
                 PVC["PersistentVolumeClaim\norders-pvc"]
                 DISK["☁️ Azure Managed Disk\nStandard SSD"]
@@ -141,10 +141,10 @@ graph TD
     Internet -->|HTTP| LB
     LB --> WS
     WS --> WD
-    CM -->|volume mount /usr/share/nginx/html| WD
+    CM -->|volume mount| WD
     HPA -->|scales replicas| WD
     Metrics -->|CPU metrics| HPA
-    WD -.->|DNS: order-svc.backend.svc.cluster.local| OS
+    WD -.->|DNS lookup| OS
     OS --> OD
     OD --> PVC
     PVC --> DISK
