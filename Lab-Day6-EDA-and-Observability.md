@@ -1034,7 +1034,7 @@ span both sources.
     ```kusto
     AzureMetrics
     | where TimeGenerated > ago(1h)
-    | where ResourceType == "MICROSOFT.SERVICEBUS/NAMESPACES"
+    | where ResourceProvider == "MICROSOFT.SERVICEBUS"
     | where MetricName in ("IncomingMessages", "OutgoingMessages", "DeadletteredMessages")
     | summarize Total = sum(Total) by bin(TimeGenerated, 5m), MetricName
     | order by TimeGenerated desc
@@ -1141,7 +1141,7 @@ platform health.
 
     ```kusto
     AzureMetrics
-    | where ResourceType == "MICROSOFT.SERVICEBUS/NAMESPACES"
+    | where ResourceProvider == "MICROSOFT.SERVICEBUS"
     | where MetricName == "DeadletteredMessages"
     | where Total > 0
     | summarize DeadLetterCount = sum(Total) by bin(TimeGenerated, 5m), Resource
