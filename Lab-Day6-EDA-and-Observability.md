@@ -742,7 +742,7 @@ In this task you build a workflow that:
 
 ### Upload a new order blob and observe the workflow run
 
-25. Create another order filed called order-003.json and upload it in orders-drop container of the orderslab6yourname storage account using the portal. The content of the file should be as below:
+25. Create another order file called order-003.json and upload it in orders-drop container of the orderslab6yourname storage account using the portal. The content of the file should be as below:
 
     ```
     {
@@ -925,6 +925,16 @@ the resulting traces and metrics.
    EOF
    ```
 
+   > **What this file does:**
+   >
+   > | Section | Purpose |
+   > | --- | --- |
+   > | `configure_azure_monitor(...)` | Initialises the Azure Monitor OpenTelemetry exporter, sending all traces and metrics to Application Insights using the connection string injected as an environment variable |
+   > | `RequestsInstrumentor().instrument()` | Auto-instruments any outbound HTTP calls made via the `requests` library — latency and status are captured as dependency telemetry automatically |
+   > | `GET /health` | Returns a simple `{"status":"healthy"}` response — used by the ACI health probe |
+   > | `GET /order` | Opens a parent span `process-order`, generates a random order ID, then opens a child span `query-inventory-db` to simulate a database call with random latency (20–150 ms). Approximately 15% of requests intentionally return HTTP 500 to surface errors in Application Insights for the observability demo |
+   > | `log_message` override | Suppresses the built-in Python HTTP server access log — Application Insights captures request telemetry instead, avoiding duplicate logging |
+
 3. Create the `requirements.txt`:
 
    ```bash
@@ -949,7 +959,7 @@ the resulting traces and metrics.
    ```
 
 5. Build the container image using Azure Container Registry (ACR) Tasks — no local
-   Docker installation required:
+   Docker installation required. Note: substitute `acrlab6yourname` with your unique ACR name.
 
    ```bash
    # Create a container registry (name must be globally unique, lowercase, no hyphens)
@@ -967,8 +977,19 @@ the resulting traces and metrics.
 
    The build runs in the cloud — output streams back to Cloud Shell. Expect 2–3 minutes.
 
-6. Retrieve your Application Insights connection string (substitute the value you
-   saved in Task 1 Step 8):
+   > **What this does:**
+   >
+   > | Command | Purpose |
+   > | --- | --- |
+   > | `az acr create` | Provisions a new Azure Container Registry at the Basic SKU — a private Docker-compatible registry hosted in Azure. All images you push here are private and accessible only to authorised Azure services. |
+   > | `az acr build` | Uploads the current directory (`.`) to ACR as a build context and runs the Docker build entirely in the cloud using **ACR Tasks**. No local Docker engine is required — Cloud Shell has no Docker daemon. The finished image is stored directly in the registry under the tag `lab6/order-api:v1`. |
+   >
+   > **Why ACR instead of Docker Hub?** ACR integrates natively with Azure Container Instances, AKS, and App Service — you can grant an ACI deployment access to a private registry with a single credential parameter, without exposing the image publicly.
+
+6. Retrieve your Application Insights connection string. This command fetches it
+   automatically from Azure and stores it in the shell variable `AI_CONN_STR` —
+   you do **not** need to paste it manually. Substitute `appinsights-lab6-yourname`
+   with your actual Application Insights resource name:
 
    ```bash
    AI_CONN_STR=$(az monitor app-insights component show \
@@ -978,6 +999,10 @@ the resulting traces and metrics.
 
    echo "Connection string: $AI_CONN_STR"
    ```
+
+   The `echo` confirms the value was retrieved. The variable `$AI_CONN_STR` is
+   used automatically in Step 7 when deploying the container — you do not need
+   to copy or paste it anywhere.
 
 7. Deploy the instrumented application to Azure Container Instances:
 
