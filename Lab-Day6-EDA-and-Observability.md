@@ -1,4 +1,4 @@
-﻿---
+---
 lab:
   title: 'Lab Day 6: Event-Driven Architecture & Observability'
   module: 'Advanced Azure Bootcamp – Day 6'
