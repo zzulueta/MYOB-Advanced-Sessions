@@ -152,17 +152,21 @@ distributed trace correlation.
 ### Explore the Log Analytics query environment
 
 9. Navigate to **law-lab6-yourname**. In the left menu select **Logs**.
-   Dismiss the Query Hub panel if it opens.
 
-10. Run a simple Kusto query to confirm the workspace is operational:
+   The portal opens in **Simple mode** by default, showing a "Query history" panel.
+   To enter KQL, select the **Simple mode** drop-down in the top-right corner of the
+   query pane and switch to **KQL mode**. A blank text editor will appear.
+
+10. Paste the following query into the editor and select **Run** (or press **Shift+Enter**):
 
     ```kusto
     union isfuzzy=true AzureActivity, AppRequests, AppDependencies
     | limit 10
     ```
 
-    At this stage the workspace is empty — the query will return zero rows. After
-    completing subsequent tasks, you will return here to run cross-service queries.
+    At this stage the workspace is empty — the query will return zero rows. This is
+    expected. After completing subsequent tasks, you will return here to run
+    cross-service queries.
 
     > **Kusto Query Language (KQL) basics:** KQL is a read-only query language for
     > Azure Monitor. Queries flow left-to-right through a pipe (`|`). Common operators:
