@@ -846,19 +846,11 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    pip install azure-monitor-opentelemetry==1.6.4 opentelemetry-instrumentation-requests==0.49b0 --quiet --user
    ```
 
-2. Fetch and set the full Application Insights connection string (the full string is required — not just the InstrumentationKey):
+2. Set the connection string copied in **Task 1, Step 8**:
 
    ```bash
-   export APPLICATIONINSIGHTS_CONNECTION_STRING=$(az monitor app-insights component show \
-     --resource-group RG-Lab6 \
-     --app appinsights-lab6-yourname \
-     --query connectionString -o tsv)
-
-   echo "Connection string set: ${APPLICATIONINSIGHTS_CONNECTION_STRING:0:50}..."
+   export APPLICATIONINSIGHTS_CONNECTION_STRING="<your-connection-string>"
    ```
-
-   > **Replace `appinsights-lab6-yourname`** with your actual Application Insights resource name (e.g., `appinsights-lab6-zz`).
-   > The connection string includes `InstrumentationKey`, `IngestionEndpoint`, and `LiveEndpoint` — all three are needed for regional routing in Australia East.
 
 3. Create the application script:
 
