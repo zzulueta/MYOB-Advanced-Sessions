@@ -1106,32 +1106,37 @@ platform health.
 
    Select **Review + Create** → **Create**.
 
-### Create an availability test
+### Availability tests (concept)
 
-7. Navigate to `appinsights-lab6-yourname` → **Availability** (left menu). Select
-   **+ Add Standard test**.
+7. Navigate to `appinsights-lab6-yourname` → **Availability** (left menu).
 
-8. Configure:
+   The **Availability** blade is where you would configure synthetic health probes
+   that Azure runs from multiple global locations on a schedule. Each probe sends
+   an HTTP request to a public URL and records whether it returned the expected
+   status code within a timeout.
 
-   | Setting | Value |
-   | --- | --- |
-   | Test name | `order-api-health` |
-   | URL | `http://<your-FQDN>:8080/health` (use the FQDN from Task 5 Step 8) |
-   | Test frequency | **5 minutes** |
-   | Test locations | Select at least **3** locations — e.g., Australia East, Southeast Asia, East US |
-   | Success criteria – HTTP status | `200` |
+   > **Why we skip this step:** The Python API (`order-api.py`) runs inside your
+   > Cloud Shell session and is only reachable at `http://localhost:8090`. Azure's
+   > global test agents are external to Cloud Shell — they cannot reach a
+   > `localhost` address. Availability tests require a **publicly accessible** HTTPS
+   > endpoint (e.g., an Azure App Service, Container App, or VM with a public IP).
+   >
+   > In a real deployment you would configure:
+   >
+   > | Setting | Example value |
+   > | --- | --- |
+   > | Test name | `order-api-health` |
+   > | URL | `https://order-api.yourdomain.com/health` |
+   > | Test frequency | **5 minutes** |
+   > | Test locations | Australia East, Southeast Asia, East US (≥ 3) |
+   > | Success criteria – HTTP status | `200` |
+   >
+   > If fewer than the configured number of locations succeed, an availability
+   > alert fires — catching regional outages that single-region monitoring misses.
 
-   Select **Create**.
-
-   > **Availability tests** call your endpoint from Azure-managed global test agents.
-   > If fewer than a configurable number of locations can reach your endpoint, an
-   > availability alert fires. This catches regional outages — not just single-region
-   > failures — because tests run from multiple geographically distinct locations
-   > simultaneously.
-
-9. After 5–10 minutes, navigate to **Availability** to see the results. Each dot
-   on the scatter chart represents a single test run from a single location. Green
-   dots = pass, red dots = fail.
+8. Observe the **Availability** blade. Because no test is configured it will be
+   empty. Note the **+ Add Standard test** button — this is the entry point you
+   would use once the application is deployed to a public endpoint.
 
 ### Create a Log Analytics alert for Service Bus dead-letter messages
 
@@ -1182,7 +1187,7 @@ platform health.
     | **Metrics chart** | `appinsights-lab6-yourname` | Metric: **Server response time**, Time: Last 24h |
     | **Metrics chart** | `servicebus-lab6-yourname` | Metric: **Active Messages**, Time: Last 24h |
     | **Metrics chart** | `servicebus-lab6-yourname` | Metric: **Dead-lettered Messages**, Time: Last 24h |
-    | **Log Analytics query** | `logs-lab6-yourname` | Paste the failed requests KQL from Task 5 Step 16 |
+    | **Log Analytics query** | `logs-lab6-yourname` | Paste the failed requests KQL from Task 5 Step 10 |
     | **Application Insights Application Map** | `appinsights-lab6-yourname` | Pin directly from the Application Map blade |
 
 17. Arrange and resize the tiles to your preference. Select **Save**.
@@ -1213,7 +1218,13 @@ platform health.
       --auth-mode login
 
     # Send traffic to the order API (generates Application Insights traces)
-    for i in $(seq 1 10); do curl -s "http://${FQDN}:8080/order" > /dev/null; sleep 1; done
+    fuser -k 8090/tcp 2>/dev/null; sleep 1
+    python ~/order-api.py &
+    SERVER_PID=$!
+    sleep 3
+    for i in $(seq 1 10); do curl -s http://localhost:8090/order; echo; sleep 1; done
+    sleep 6
+    kill $SERVER_PID
     ```
 
 20. Confirm all observability layers captured the activity:
@@ -1224,7 +1235,7 @@ platform health.
     | Service Bus message | `servicebus-lab6-yourname` → `order-intake` → **Metrics** → **Messages** | Incoming message count increases |
     | Logic App run | `logicapp-lab6-yourname` → Workflows → `process-order` → **Run history** | New Succeeded run for order-004 |
     | Application Insights | `appinsights-lab6-yourname` → **Transaction search** | New request traces visible |
-    | Log Analytics | **logs-lab6-yourname** → **Logs** → run the KQL from Task 5 Step 16 | New rows with recent timestamps |
+    | Log Analytics | **logs-lab6-yourname** → **Logs** → run the KQL from Task 5 Step 10 | New rows with recent timestamps |
     | Dashboard | **Lab6 — Platform Health** | Metrics charts reflect recent activity |
 
 ---
