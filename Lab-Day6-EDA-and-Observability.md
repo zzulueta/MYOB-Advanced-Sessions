@@ -629,18 +629,31 @@ In this task you build a workflow that:
     | Content | Select the lightning-bolt icon and choose **Message Body** from the trigger's dynamic content |
     | Schema | Select **Use sample payload to generate schema** and paste: |
 
+    > **Where does this sample come from?** This is the actual Event Grid message body delivered to the `order-intake` queue, which you can inspect in Service Bus Explorer (Task 3, Step 10). Paste your own message from there, or use the sample below.
+
     ```json
     {
-      "topic": "/subscriptions/xxx",
+      "topic": "/subscriptions/xxx/resourceGroups/RG-Lab6/providers/Microsoft.Storage/storageAccounts/orderslab6yourname",
       "subject": "/blobServices/default/containers/orders-drop/blobs/order-002.json",
       "eventType": "Microsoft.Storage.BlobCreated",
-      "eventTime": "2026-03-21T09:15:04Z",
+      "id": "7a48eca8-b01e-0005-4dc0-ba5f1f06d7cd",
       "data": {
         "api": "PutBlob",
+        "requestId": "7a48eca8-b01e-0005-4dc0-ba5f1f000000",
+        "eTag": "0x8DE88D8105829EC",
+        "contentType": "application/json",
+        "contentLength": 250,
         "blobType": "BlockBlob",
+        "accessTier": "Default",
         "url": "https://orderslab6yourname.blob.core.windows.net/orders-drop/order-002.json",
-        "contentLength": 231
-      }
+        "sequencer": "000000000000000000000000000219880000000000a171a8",
+        "storageDiagnostics": {
+          "batchId": "78a44d18-d006-0071-00c0-ba6bef000000"
+        }
+      },
+      "dataVersion": "",
+      "metadataVersion": "1",
+      "eventTime": "2026-03-23T12:31:10.1725913Z"
     }
     ```
 
