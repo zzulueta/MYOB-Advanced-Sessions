@@ -862,6 +862,11 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    from opentelemetry import trace
    from opentelemetry.trace import SpanKind, StatusCode
 
+   # Set the service name before configure_azure_monitor is called.
+   # Without this, the OpenTelemetry SDK defaults to "unknown_service"
+   # which is what Application Map shows as the node label.
+   os.environ.setdefault("OTEL_SERVICE_NAME", "order-api")
+
    # Initialise the Azure Monitor exporter once at startup.
    # All OpenTelemetry spans created in this process are automatically
    # batched and sent to Application Insights via this connection string.
@@ -949,11 +954,15 @@ In this task you run a short Python script directly in Cloud Shell — no contai
 5. In the portal, navigate to `appinsights-lab6-yourname` → **Overview**. After 1–2
    minutes the **Failed requests** and **Server response time** tiles will update.
 
-6. Select **Investigate → Application Map**. You should see two nodes — the Python
-   process and `query-inventory-db` — connected by an edge showing average latency.
+6. Select **Investigate → Application Map**. You should see two nodes — **order-api**
+   and `query-inventory-db` — connected by an edge showing average latency.
 
    > **Note:** Application Map may take 5–10 minutes to populate. If it shows
    > "No data available", continue to Step 7 first and return here later.
+   >
+   > **Tip:** If the node label shows `unknown_service` instead of `order-api`, the
+   > `OTEL_SERVICE_NAME` env var was not set before the SDK initialised. Re-run
+   > Steps 3 and 4 — the script sets it automatically via `os.environ.setdefault`.
 
 7. Select **Investigate → Search** → **Last 30 minutes** → **View as individual
    items**. Look for entries with **Result code 500** and select one to open the
