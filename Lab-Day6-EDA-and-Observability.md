@@ -530,6 +530,7 @@ In this task you build a workflow that:
 3. Publishes a notification to the `order-notifications` topic (fan-out to `invoice-svc`
    and `warehouse-svc` subscribers)
 4. Writes an audit record to Azure Table Storage
+5. Completes the message to settle it from the `order-intake` queue
 
 ### Create a Storage Table for order auditing
 
@@ -604,7 +605,7 @@ In this task you build a workflow that:
     | --- | --- |
     | Connection name | `sb-connection` |
     | Authentication | **Connection String** |
-    | Connection String | paste the Primary Connection String from Task 2 Step 12 |
+    | Connection String | paste the Service Bus Primary Connection String from Task 2 Step 12 |
 
     Select **Create new**.
 
@@ -698,7 +699,7 @@ In this task you build a workflow that:
     | --- | --- |
     | Connection name | `storage-connection` |
     | Authentication | **Connection string** |
-    | Connection string | Paste the **Connection string** value copied in Task 3, Step 7 |
+    | Connection string | Paste the **Storage Account Connection string** value copied in Task 3, Step 7 |
 
     Select **Create new**.
 
