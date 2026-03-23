@@ -862,6 +862,9 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    from opentelemetry import trace
    from opentelemetry.trace import SpanKind, StatusCode
 
+   # Initialise the Azure Monitor exporter once at startup.
+   # All OpenTelemetry spans created in this process are automatically
+   # batched and sent to Application Insights via this connection string.
    configure_azure_monitor(
        connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
    )
@@ -870,28 +873,42 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    class OrderHandler(BaseHTTPRequestHandler):
        def do_GET(self):
            if self.path.startswith("/order"):
+               # SpanKind.SERVER marks this as an inbound request span.
+               # Application Insights classifies SERVER spans as "Requests"
+               # (visible in the Overview, Failures, and Search blades).
+               # Without this, the span defaults to INTERNAL and appears
+               # only as a "Trace", not counted in request metrics.
                with tracer.start_as_current_span("process-order", kind=SpanKind.SERVER) as span:
                    order_id = f"ORD-{random.randint(1000, 9999)}"
+                   # Semantic HTTP attributes let the portal display the
+                   # correct method, URL, and status code in the detail view.
                    span.set_attribute("http.method", "GET")
                    span.set_attribute("http.target", "/order")
                    span.set_attribute("order.id", order_id)
+                   # Child span representing a downstream dependency call.
+                   # Application Insights renders this as a dependency node
+                   # in the Application Map and as a child row in the waterfall.
                    with tracer.start_as_current_span("query-inventory-db") as dep:
-                       latency = random.uniform(0.02, 0.15)
+                       latency = random.uniform(0.02, 0.15)   # simulate 20-150 ms DB latency
                        time.sleep(latency)
                        dep.set_attribute("db.latency_ms", round(latency * 1000))
+                   # Simulate a 15% error rate to demonstrate the Failures blade.
                    if random.random() < 0.15:
                        span.set_attribute("http.status_code", 500)
+                       # StatusCode.ERROR is what Application Insights reads to set
+                       # Success = false on the request. The http.status_code attribute
+                       # alone is NOT enough to flip the failed-request counter.
                        span.set_status(StatusCode.ERROR, "inventory-db timeout")
                        self.send_response(500); self.end_headers()
                        self.wfile.write(json.dumps({"error": "inventory-db timeout", "orderId": order_id}).encode())
                        return
                    span.set_attribute("http.status_code", 200)
-                   span.set_status(StatusCode.OK)
+                   span.set_status(StatusCode.OK)   # explicitly mark span as successful
                    self.send_response(200); self.end_headers()
                    self.wfile.write(json.dumps({"orderId": order_id, "status": "accepted"}).encode())
                return
            self.send_response(404); self.end_headers()
-       def log_message(self, format, *args): pass
+       def log_message(self, format, *args): pass   # suppress default request logging to stdout
 
    HTTPServer(("0.0.0.0", 8090), OrderHandler).serve_forever()
    EOF
