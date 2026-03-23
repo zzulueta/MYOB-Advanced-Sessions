@@ -130,9 +130,7 @@ distributed trace correlation.
 
 3. Select **Review + Create**, then **Create**. Provisioning takes under a minute.
 
-4. Once deployed, navigate to the workspace. In the left menu select **Agents** and
-   note the **Workspace ID** and **Primary key** — you will need these in Task 5 when
-   configuring the application container.
+4. Once deployed, navigate to the workspace. In the left menu under **Settings**, select **Properties**. Note the **Workspace ID** shown on this pane — copy it somewhere accessible.
 
 ### Create Application Insights
 
@@ -145,21 +143,11 @@ distributed trace correlation.
    | Resource group | **RG-Lab6** |
    | Name | `ai-lab6-yourname` |
    | Region | **Australia East** |
-   | Resource Mode | **Workspace-based** |
    | Log Analytics Workspace | **law-lab6-yourname** (the workspace you just created) |
 
 7. Select **Review + Create**, then **Create**.
 
-8. Once deployed, navigate to `ai-lab6-yourname`. On the **Overview** pane, copy
-   the **Connection String** (not the Instrumentation Key — the connection string
-   is the modern standard that includes both the key and the ingestion endpoint).
-   Store it somewhere accessible — you will paste it into an environment variable in Task 5.
-
-   > **Connection String vs Instrumentation Key:** The Instrumentation Key is a legacy
-   > identifier that works but does not include the ingestion endpoint explicitly. The
-   > Connection String (`InstrumentationKey=...;IngestionEndpoint=...;...`) is the
-   > current recommended format. SDKs from version 2.12 onwards accept either, but the
-   > connection string is required for sovereign cloud and private endpoint scenarios.
+8. Once deployed, navigate to `ai-lab6-yourname`. On the **Overview** pane, copy the **Connection String**. Store it somewhere accessible — you will paste it into an environment variable in Task 5.
 
 ### Explore the Log Analytics query environment
 
