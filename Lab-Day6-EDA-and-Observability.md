@@ -1001,18 +1001,7 @@ span both sources.
       by Name, Success
     | order by AvgDurationMs desc
     ```
-
-12. Find Logic App workflow runs recorded by Application Insights (from Task 4):
-
-    ```kusto
-    AppRequests
-    | where TimeGenerated > ago(24h)
-    | where AppRoleName has "logicapp" or Name has "process-order"
-    | project TimeGenerated, AppRoleName, Name, Success, DurationMs
-    | order by TimeGenerated desc
-    ```
-
-13. Correlate request traces with their dependency spans:
+12. Correlate request traces with their dependency spans:
 
     ```kusto
     AppRequests
@@ -1028,6 +1017,34 @@ span both sources.
 
     This links each HTTP request to the `query-inventory-db` span it triggered, showing
     how much of the total latency came from the simulated database call.
+
+13. Find Logic App workflow runs recorded by Application Insights (from Task 4):
+
+    ```kusto
+    AppRequests
+    | where TimeGenerated > ago(24h)
+    | where AppRoleName has "logicapp"
+    | project TimeGenerated, AppRoleName, Name, Success, DurationMs
+    | order by TimeGenerated desc
+    ```
+
+14. Query Service Bus message activity from the last hour — incoming messages,
+    outgoing messages, and any dead-lettered messages across all queues and topics:
+
+    ```kusto
+    AzureMetrics
+    | where TimeGenerated > ago(1h)
+    | where ResourceType == "MICROSOFT.SERVICEBUS/NAMESPACES"
+    | where MetricName in ("IncomingMessages", "OutgoingMessages", "DeadletteredMessages")
+    | summarize Total = sum(Total) by bin(TimeGenerated, 5m), MetricName
+    | order by TimeGenerated desc
+    ```
+
+    > Each 5-minute bucket shows how many messages arrived (`IncomingMessages`),
+    > were consumed (`OutgoingMessages`), and failed into the dead-letter queue
+    > (`DeadletteredMessages`). A gap between incoming and outgoing in the same
+    > window indicates messages are queued but not yet processed — useful for
+    > spotting backlog build-up.
 
 ---
 
