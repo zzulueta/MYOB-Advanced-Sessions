@@ -381,6 +381,14 @@ lightweight, near-real-time event notification at scale.
    > any file lands — triggering the downstream processing pipeline automatically,
    > without the order producer needing to know who the consumers are.
 
+### Retrieve the Storage Account access key
+
+6. In the left menu, under **Security + networking**, select **Access keys**.
+
+7. Select **Show** next to **key1**, then copy the **Key** value and save it somewhere accessible (Notepad, etc.). You will use this in Task 4 when creating the Table Storage connection.
+
+   > **Why Access Key authentication?** The Logic Apps Azure Table Storage connector uses shared key auth to write audit records. This key grants full read/write access to all tables in the storage account, so treat it as a secret — do not commit it to source control.
+
 ### Create the Event Grid System Topic
 
 6. Navigate to `orderslab6yourname`. In the left menu, select **Events**.
@@ -669,7 +677,7 @@ In this task you build a workflow that:
     | Setting | Value |
     | --- | --- |
     | Queue or topic name | `order-notifications` |
-    | Content | select the expression editor (the `fx` icon) and enter below: |
+    | Content | select the expression editor (the `fx` icon) and enter below formula then select Add |
 
     ```
     json(concat('{"event":"OrderReceived","blobUrl":"', body('Parse_JSON')?['data']?['url'], '","processedAt":"', utcNow(), '"}'))
@@ -682,8 +690,8 @@ In this task you build a workflow that:
 
 ### Add the Table Storage write action (audit)
 
-19. Add a third action. Search for `Azure Table Storage` and select **Insert or replace
-    entity**.
+19. Add a third action. Search for `Azure Table Storage` and select **Insert or Update
+    Entity**.
 
 20. Create a new connection:
 
@@ -692,7 +700,7 @@ In this task you build a workflow that:
     | Connection name | `storage-connection` |
     | Authentication | **Access Key** |
     | Storage Account Name | `orderslab6yourname` |
-    | Shared Storage Key | Copy from orderslab6yourname → **Access keys** → **key1** |
+    | Shared Storage Key | Paste the **key1** value copied in Task 3, Step 7 |
 
     Select **Create new**.
 
