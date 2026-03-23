@@ -973,9 +973,16 @@ the resulting traces and metrics.
      --registry acrlab6yourname \
      --image lab6/order-api:v1 \
      .
+
+   # Enable the admin user so ACI can authenticate to pull the image
+   az acr update \
+     --name acrlab6yourname \
+     --admin-enabled true
    ```
 
    The build runs in the cloud — output streams back to Cloud Shell. Expect 2–3 minutes.
+
+   > **Why enable the admin user?** By default ACR creates a registry with the admin account disabled. The `az container create` command in Step 7 authenticates using the registry name as the username and an auto-generated admin password. The `az acr credential show` command (Step 7) only works after the admin account is enabled. In production, use a managed identity instead — but for this lab the admin account is the simplest option.
 
    > **What this does:**
    >
@@ -986,25 +993,21 @@ the resulting traces and metrics.
    >
    > **Why ACR instead of Docker Hub?** ACR integrates natively with Azure Container Instances, AKS, and App Service — you can grant an ACI deployment access to a private registry with a single credential parameter, without exposing the image publicly.
 
-6. Retrieve your Application Insights connection string. This command fetches it
-   automatically from Azure and stores it in the shell variable `AI_CONN_STR` —
-   you do **not** need to paste it manually. Substitute `appinsights-lab6-yourname`
-   with your actual Application Insights resource name:
+6. Set the Application Insights connection string as a shell variable. Use the
+   connection string you copied in **Task 1, Step 8** and paste it below,
+   replacing `<your-connection-string>`:
 
    ```bash
-   AI_CONN_STR=$(az monitor app-insights component show \
-     --app appinsights-lab6-yourname \
-     --resource-group RG-Lab6 \
-     --query connectionString -o tsv)
+   AI_CONN_STR="<your-connection-string>"
 
    echo "Connection string: $AI_CONN_STR"
    ```
 
-   The `echo` confirms the value was retrieved. The variable `$AI_CONN_STR` is
-   used automatically in Step 7 when deploying the container — you do not need
-   to copy or paste it anywhere.
+   The `echo` confirms the value is set. The variable `$AI_CONN_STR` is used
+   automatically in Step 7 when deploying the container — you do not need to
+   paste it again anywhere else.
 
-7. Deploy the instrumented application to Azure Container Instances:
+7. Deploy the instrumented application to Azure Container Instances. Modify the command below with your ACR name and Application Insights connection string variable:
 
    ```bash
    # Get the ACR login server and credentials
