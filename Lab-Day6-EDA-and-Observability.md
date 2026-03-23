@@ -85,7 +85,8 @@ RG-Lab6 (Resource Group)
 │         ├── Trigger:  Service Bus — When a message arrives in order-intake
 │         ├── Action 1: Parse JSON message body
 │         ├── Action 2: Forward to order-notifications Topic (fan-out)
-│         └── Action 3: Insert enriched record into Azure Table Storage
+│         ├── Action 3: Insert enriched record into Azure Table Storage
+│         └── Action 4: Complete the message in order-intake queue
 │
 └── Storage Account – Table (orderslab6yourname)
       └── Table: OrderAudit
