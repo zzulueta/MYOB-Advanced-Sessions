@@ -1007,8 +1007,8 @@ span both sources.
     ```kusto
     AppRequests
     | where TimeGenerated > ago(24h)
-    | where Cloud_RoleName has "logicapp" or Name has "process-order"
-    | project TimeGenerated, Cloud_RoleName, Name, Success, DurationMs
+    | where AppRoleName has "logicapp" or Name has "process-order"
+    | project TimeGenerated, AppRoleName, Name, Success, DurationMs
     | order by TimeGenerated desc
     ```
 
