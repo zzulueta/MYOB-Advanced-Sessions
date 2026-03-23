@@ -890,9 +890,8 @@ In this task you run a short Python script directly in Cloud Shell — no contai
                    span.set_attribute("http.method", "GET")
                    span.set_attribute("http.target", "/order")
                    span.set_attribute("order.id", order_id)
-                   # Child span representing a downstream dependency call.
-                   # Application Insights renders this as a dependency node
-                   # in the Application Map and as a child row in the waterfall.
+                   # Child span simulating a downstream DB call.
+                   # Visible in the end-to-end waterfall for each request.
                    with tracer.start_as_current_span("query-inventory-db") as dep:
                        latency = random.uniform(0.02, 0.15)   # simulate 20-150 ms DB latency
                        time.sleep(latency)
@@ -923,7 +922,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    > | --- | --- |
    > | `configure_azure_monitor(...)` | Initialises the OpenTelemetry exporter — all traces go to Application Insights |
    > | `process-order` span | Parent span wrapping the full order request; appears as a Request in the portal |
-   > | `query-inventory-db` span | Child span simulating a DB call with 20–150 ms random latency; visible in the end-to-end waterfall |
+   > | `query-inventory-db` span | Child span simulating a DB call with 20–150 ms random latency |
    > | 15% HTTP 500 responses | Intentional errors to demonstrate Failures and Search in the portal |
 
 4. Start the server in the background and send 40 requests:
