@@ -302,41 +302,21 @@ Two core primitives:
     configuring the Event Grid subscription, and in Cloud Shell when sending test
     messages.
 
-### Send and receive a test message from Cloud Shell
+### Send and receive a test message using Service Bus Explorer
 
-13. Open **Azure Cloud Shell** and select **Bash**.
+13. In the portal, navigate to `sb-lab6-yourname` → **Queues** → `order-intake`. Select **Service Bus Explorer**.
 
-14. Install the Azure Service Bus extension for the Azure CLI:
+14. Select the **Send message** tab. In the **Message body** field, paste the
+    following JSON and select **Send**:
 
-    ```bash
-    az extension add --name servicebus
+    ```json
+    {"orderId":"ORD-001","customerId":"C-42","amount":149.99,"status":"received"}
     ```
 
-15. Send a test message to the `order-intake` queue:
-
-    ```bash
-    az servicebus queue message send \
-      --resource-group RG-Lab6 \
-      --namespace-name sb-lab6-yourname \
-      --queue-name order-intake \
-      --body '{"orderId":"ORD-001","customerId":"C-42","amount":149.99,"status":"received"}'
-    ```
-
-16. Peek at the message (non-destructive — does not consume the message):
-
-    ```bash
-    az servicebus queue message peek \
-      --resource-group RG-Lab6 \
-      --namespace-name sb-lab6-yourname \
-      --queue-name order-intake
-    ```
-
-    You should see the JSON body in the output, confirming the message is sitting in
-    the queue waiting for a consumer.
-
-17. In the portal, navigate to `order-intake` → **Service Bus Explorer** (left menu,
-    under **Settings**). Select **Peek from start**. The message body appears in the
-    detail pane on the right.
+15. Select **Peek from start**. The message body appears
+    in the detail pane on the right, confirming the message is sitting in the queue
+    waiting for a consumer. Peeking is non-destructive — the message remains in the
+    queue.
 
     > **Service Bus Explorer in the portal** is the fastest way to inspect and
     > debug queue content during development. In production, messages are consumed
@@ -345,10 +325,10 @@ Two core primitives:
 
 ### Enable diagnostic settings for Service Bus
 
-18. Navigate to `sb-lab6-yourname`. In the left menu, under **Monitoring**, select
+16. Navigate to `sb-lab6-yourname`. In the left menu, under **Monitoring**, select
     **Diagnostic settings**.
 
-19. Select **+ Add diagnostic setting** and configure:
+17. Select **+ Add diagnostic setting** and configure:
 
     | Setting | Value |
     | --- | --- |
