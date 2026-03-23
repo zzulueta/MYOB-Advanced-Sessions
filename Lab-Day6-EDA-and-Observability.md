@@ -1024,8 +1024,9 @@ the resulting traces and metrics.
      --environment-variables APPLICATIONINSIGHTS_CONNECTION_STRING="${AI_CONN_STR}" \
      --ports 8080 \
      --dns-name-label order-api-yourname \
-     --cpu 0.5 \
-     --memory 0.5
+     --os-type Linux \
+     --cpu 1 \
+     --memory 1.5
    ```
 
 8. Retrieve the public FQDN:
@@ -1066,7 +1067,15 @@ the resulting traces and metrics.
     | **Server requests** | Requests per second |
     | **Availability** | Results of configured availability tests (none yet — configured in Task 6) |
 
-11. Select **Application Map** in the left menu.
+11. Select **Investigate -> Application Map** in the left menu.
+
+    > **Note:** Application Map aggregates telemetry over time to build the topology graph. It typically takes **5–10 minutes** after traffic runs before nodes appear. If the map shows "No data available", move on to **Transaction search** (Step 12) first — it populates within 1–2 minutes and confirms telemetry is flowing. Return here after completing Steps 12–15.
+    >
+    > If Transaction search is also empty, the connection string may not have been injected into the container correctly. Verify with:
+    > ```bash
+    > az container show --resource-group RG-Lab6 --name order-api --query "containers[0].environmentVariables" -o table
+    > ```
+    > The `APPLICATIONINSIGHTS_CONNECTION_STRING` value should match the connection string from Task 1, Step 8. If it is blank or incorrect, delete and recreate the container (repeat Steps 6–7) with the correct value.
 
     The Application Map renders a real-time topology graph. You should see:
     - A node for **order-api** (the ACI container)
@@ -1082,11 +1091,15 @@ the resulting traces and metrics.
     > live architecture diagram that reflects actual runtime behaviour, not just
     > what was documented at design time.
 
-12. Select **Transaction search** (left menu, under **Investigate**). In the
+12. Select **Search** (left menu, under **Investigate**). In the
     **Time range**, select **Last 30 minutes**.
 
-    You will see a list of recent requests. Select one with **Result code 500** to
-    open the end-to-end transaction detail. The waterfall view shows:
+    The default view groups results by trace. To see individual requests with result
+    codes, select **View as individual items** (button next to the "Traces" tab).
+
+    You should see a list of individual request entries. Look for entries with
+    **Result code 500** — select one to open the end-to-end transaction detail.
+    The waterfall view shows:
     - The top-level `process-order` span (the outer trace)
     - The child `query-inventory-db` span nested below it
     - The duration of each span and the point at which the error occurred
