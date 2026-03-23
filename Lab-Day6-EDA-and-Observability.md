@@ -229,11 +229,15 @@ Two core primitives:
 
    Select **Create**.
 
-   > **Dead-letter queue (DLQ):** Every Service Bus queue and subscription
-   > automatically has a companion dead-letter sub-queue. If a message cannot be
-   > delivered after `Maximum delivery count` attempts (3 in this lab), Service Bus
-   > moves it to the DLQ rather than discarding it. This gives operators time to
-   > inspect, repair, and replay failed messages without data loss.
+   > **Queue parameter explanations:**
+   >
+   > | Setting | Why this value |
+   > | --- | --- |
+   > | **Name** | The queue identifier used by producers (Event Grid) and consumers (Logic App) to send and receive messages. Must be unique within the namespace. |
+   > | **Maximum delivery count** | How many times Service Bus retries delivering a message before giving up. Set to `3` — after 3 failed processing attempts, the message is moved to the dead-letter queue instead of looping forever. |
+   > | **Message time to live** | How long a message waits in the queue before expiring if no consumer picks it up. `1 day` prevents stale orders from being processed long after they were submitted. |
+   > | **Lock duration** | When a consumer reads a message using peek-lock, it holds an exclusive lock for this duration. Set to `30 seconds` — if the consumer crashes or times out before completing the message, the lock expires and Service Bus makes the message available for redelivery automatically. |
+   > | **Enable dead-lettering on message expiration** | When checked, messages that reach their time-to-live without being consumed are moved to the dead-letter sub-queue instead of being silently deleted. This ensures no order is ever lost — expired messages can be inspected, corrected, and replayed by an operator. |
 
 ### Create the order-notifications Topic and Subscriptions
 
