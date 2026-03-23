@@ -626,7 +626,7 @@ In this task you build a workflow that:
 
     | Field | Value |
     | --- | --- |
-    | Content | Select the lightning-bolt icon and choose **Message Body** from the trigger's dynamic content |
+    | Content | Select the lightning-bolt icon and choose **Content** from the trigger's dynamic content |
     | Schema | Select **Use sample payload to generate schema** and paste: |
 
     > **Where does this sample come from?** This is the actual Event Grid message body delivered to the `order-intake` queue, which you can inspect in Service Bus Explorer (Task 3, Step 10). Paste your own message from there, or use the sample below.
