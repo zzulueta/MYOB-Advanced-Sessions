@@ -280,6 +280,16 @@ Two core primitives:
    > independent copy for each subscription. The `invoice-svc` subscription's copy
    > is completely independent of the `warehouse-svc` subscription's copy — one
    > subscriber processing (or failing) its copy has no effect on the other.
+   >
+   > **Real-world analogy:** Think of `order-notifications` as a company-wide email
+   > distribution list. When a new order arrives, one notification is sent — and two
+   > teams each get their own private copy simultaneously:
+   > - **`invoice-svc`** — the billing team's inbox: generate an invoice and take payment
+   > - **`warehouse-svc`** — the warehouse team's inbox: pick, pack, and ship the items
+   >
+   > If the billing team is slow that day, the warehouse team doesn't wait — they're
+   > working from their own copy. If the warehouse system crashes, billing still got
+   > paid. Neither team interferes with the other.
 
 ### Retrieve the connection string
 
