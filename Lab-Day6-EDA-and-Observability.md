@@ -951,7 +951,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
 ### Explore Application Insights in the portal
 
 5. In the portal, navigate to `appinsights-lab6-yourname` → **Overview**. After 1–2
-   minutes the **Failed requests** and **Server response time** tiles will update.
+   minutes the **Failed requests**, **Server response time**, and **Server requests** tiles will update.
 
 6. Select **Investigate → Application Map**. You should see the **order-api** node
    showing the call count, error rate, and average response time.
@@ -959,9 +959,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    > **Note:** Application Map may take 5–10 minutes to populate. If it shows
    > "No data available", continue to Step 7 first and return here later.
 
-7. Select **Investigate → Search** → **Last 30 minutes** → **View as individual
-   items**. Look for entries with **Result code 500** and select one to open the
-   end-to-end waterfall showing the `process-order` and `query-inventory-db` spans.
+7. Select **Investigate → Search** → **Last 30 minutes** → **View as individual items** → **Event types = Request** . Look for entries with **Result code 500** and select one (double-click) to open the end-to-end waterfall showing the `process-order` and `query-inventory-db` spans.
 
    > **How distributed tracing works:** The SDK generates a unique `Operation ID` for
    > each inbound request and a `Span ID` for each unit of work. Both IDs are injected
