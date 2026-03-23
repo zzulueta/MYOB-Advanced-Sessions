@@ -890,10 +890,13 @@ In this task you run a short Python script directly in Cloud Shell — no contai
                    span.set_attribute("http.method", "GET")
                    span.set_attribute("http.target", "/order")
                    span.set_attribute("order.id", order_id)
-                   # Child span representing a downstream dependency call.
-                   # Application Insights renders this as a dependency node
-                   # in the Application Map and as a child row in the waterfall.
-                   with tracer.start_as_current_span("query-inventory-db") as dep:
+                   # SpanKind.CLIENT marks this as an outbound dependency call.
+                   # Application Insights maps CLIENT spans to "Dependencies", which
+                   # appear as a separate connected node in the Application Map.
+                   # SpanKind.INTERNAL (the default) stays inside the same node and
+                   # never appears as a second bubble in the map.
+                   with tracer.start_as_current_span("query-inventory-db", kind=SpanKind.CLIENT) as dep:
+                       dep.set_attribute("db.system", "sql")   # tells App Insights this is a DB dependency
                        latency = random.uniform(0.02, 0.15)   # simulate 20-150 ms DB latency
                        time.sleep(latency)
                        dep.set_attribute("db.latency_ms", round(latency * 1000))
