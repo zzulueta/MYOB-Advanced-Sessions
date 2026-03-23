@@ -696,9 +696,8 @@ In this task you build a workflow that:
     | Setting | Value |
     | --- | --- |
     | Connection name | `storage-connection` |
-    | Authentication | **Access Key** |
-    | Storage Account Name | `orderslab6yourname` |
-    | Shared Storage Key | Paste the **Connection string** value copied in Task 3, Step 7 |
+    | Authentication | **Connection string** |
+    | Connection string | Paste the **Connection string** value copied in Task 3, Step 7 |
 
     Select **Create new**.
 
@@ -706,10 +705,8 @@ In this task you build a workflow that:
 
     | Setting | Value |
     | --- | --- |
-    | Table name | `OrderAudit` |
-    | Partition key | `orders` |
-    | Row key | Use expression: `guid()` |
-    | Entity | Compose this JSON (use dynamic content for blobUrl): |
+    | Table Name | `OrderAudit` |
+    | Entity | Replace the default JSON with the following: |
 
     ```json
     {
@@ -721,6 +718,8 @@ In this task you build a workflow that:
     }
     ```
 
+    > The **Entity** field already contains a default `{"PartitionKey": "", "RowKey": ""}` template — replace it entirely with the JSON above. `PartitionKey` and `RowKey` are embedded directly in the entity body; there are no separate top-level fields for them in this designer.
+
 ### Add the Complete Message action
 
 22. Add a final action. Search for `Service Bus` and select **Complete the message in a queue**.
@@ -729,9 +728,8 @@ In this task you build a workflow that:
 
     | Setting | Value |
     | --- | --- |
-    | Connection | **sb-connection** |
     | Queue name | `order-intake` |
-    | Lock token | Select dynamic content → **Lock Token** from the trigger |
+    | Lock token | Select the **Lock token** field, then from the dynamic content picker select **Lock Token** (listed under the Service Bus trigger) |
 
     > This action settles the message. Once completed, Service Bus permanently removes
     > it from the queue. If this action is never reached (because a previous action
@@ -742,10 +740,9 @@ In this task you build a workflow that:
 
 ### Upload a new order blob and observe the workflow run
 
-25. In Cloud Shell, upload another order file:
+25. Create another order filed called order-003.json and upload it in orders-drop container of the orderslab6yourname storage account using the portal. The content of the file should be as below:
 
-    ```bash
-    cat <<'EOF' > order-003.json
+    ```
     {
       "orderId": "ORD-003",
       "customerId": "C-88",
@@ -755,14 +752,6 @@ In this task you build a workflow that:
       "total": 119.98,
       "submittedAt": "2026-03-21T09:30:00Z"
     }
-    EOF
-
-    az storage blob upload \
-      --account-name orderslab6yourname \
-      --container-name orders-drop \
-      --name order-003.json \
-      --file order-003.json \
-      --auth-mode login
     ```
 
 26. In the portal, navigate to `logicapp-lab6-yourname` → **Workflows** → `process-order`
@@ -774,20 +763,70 @@ In this task you build a workflow that:
     duration and inputs/outputs. Expand **Parse JSON** to see the parsed blob URL.
     Expand **Insert or replace entity** to confirm the Table Storage write.
 
-28. Verify the audit record was written. In Cloud Shell:
+28. Verify the audit record was written. In the portal, navigate to `orderslab6yourname` → **Storage Browser** → **Tables** → `OrderAudit`.
 
-    ```bash
-    az storage entity query \
-      --account-name orderslab6yourname \
-      --table-name OrderAudit \
-      --auth-mode login
-    ```
-
-    You should see one or more rows with the `BlobUrl` and `ProcessedAt` fields.
+    You should see one or more rows with `PartitionKey`, `RowKey`, `BlobUrl`, `EventTime`, and `ProcessedAt` columns populated.
 
 29. Verify the fan-out. In the portal, navigate to `servicebus-lab6-yourname` →
     **Topics** → `order-notifications` → **Subscriptions**. Both `invoice-svc`
-    and `warehouse-svc` should show **1** as the **Active Message Count**.
+    and `warehouse-svc` should show an **Active Message Count** greater than zero.
+
+30. Inspect the messages delivered to one subscription using Service Bus Explorer:
+
+    **a.** Select the `invoice-svc` subscription.
+
+    **b.** In the left menu, select **Service Bus Explorer**.
+
+    **c.** Select **Peek from start**. The messages appear in the list — select any one to view its body in the detail pane on the right.
+
+    You should see the notification JSON published by the Logic App, for example:
+
+    ```json
+    {"event":"OrderReceived","blobUrl":"https://orderslab6yourname.blob.core.windows.net/orders-drop/order-003.json","processedAt":"2026-03-23T12:35:00Z"}
+    ```
+
+    > Peeking is non-destructive — the messages remain in the `invoice-svc` subscription unaffected. The `warehouse-svc` subscription holds its own independent copies.
+
+31. Confirm that the `order-intake` queue is now empty. In the portal, navigate to `servicebus-lab6-yourname` → **Queues** → `order-intake` → **Service Bus Explorer** → **Peek from start**.
+
+    No messages should appear — the Logic App's **Complete the message** action settled every message after successful processing, and Service Bus permanently removed them from the queue.
+
+    > This confirms the end-to-end at-least-once guarantee in action: messages were locked (peek-lock), processed through all four actions, and only then removed. If the workflow had failed partway through, the lock would have expired and the messages would have reappeared for redelivery.
+
+---
+
+### Task 4 Summary
+
+In this task you built a complete, event-driven order processing pipeline entirely without writing application code:
+
+| Step | What you built | Why it matters |
+| --- | --- | --- |
+| **Storage Table** | `OrderAudit` table in `orderslab6yourname` | Persistent, queryable audit trail for every processed order |
+| **Logic App (Standard)** | `logicapp-lab6-zz` on a Workflow Service Plan | Single-tenant host with dedicated compute — suitable for production workloads |
+| **Stateful workflow** | `process-order` | Run history is durable; each step's inputs/outputs are persisted and replayable |
+| **Service Bus trigger (peek-lock)** | Polls `order-intake` queue | Guarantees at-least-once processing — message is only removed after the workflow explicitly completes it |
+| **Parse JSON action** | Extracts the Event Grid envelope | Makes structured fields (blob URL, event time) available as dynamic content for downstream steps |
+| **Send message action** | Publishes to `order-notifications` topic | Fan-out: a single publish delivers an independent copy to both `invoice-svc` and `warehouse-svc` — no extra code required |
+| **Insert or Update Entity action** | Writes to `OrderAudit` table | Audit record with blob URL, event time, and processing timestamp — queryable via Storage Browser |
+| **Complete message action** | Settles the peek-locked message | Removes the message from `order-intake` only after all previous steps have succeeded |
+
+**Key pattern:** The workflow acts as the *orchestrator* — it reads from one reliable channel (Service Bus queue), enriches the data, fans out to subscribers, writes an audit record, then acknowledges receipt. If any step fails, the message is automatically redelivered and the run can be inspected in Run history.
+
+> **Could Service Bus do this without a Logic App?**
+>
+> Service Bus has a built-in **Auto-forwarding** feature that can relay messages from a queue (or subscription) directly to another queue or topic — no Logic App or code required. You simply enable it on the queue entity and set the forwarding destination.
+>
+> However, Auto-forwarding only relays the message *as-is* — no transformation, no enrichment, no side effects. In this lab the Logic App is doing significantly more:
+>
+> | Capability | Auto-forwarding | Logic App |
+> | --- | --- | --- |
+> | Fan-out to topic | ✅ | ✅ |
+> | Transform / enrich message | ❌ | ✅ |
+> | Write audit record (Table Storage) | ❌ | ✅ |
+> | Explicit peek-lock settlement | ❌ | ✅ |
+> | Run history & step-level debugging | ❌ | ✅ |
+>
+> **Rule of thumb:** Use Auto-forwarding for simple relay (same message, no transformation). Use a Logic App, Azure Function, or custom consumer when you need to transform, enrich, branch, or write side effects.
 
 ---
 
