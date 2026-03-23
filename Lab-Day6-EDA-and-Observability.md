@@ -980,7 +980,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    python ~/order-api.py &
    SERVER_PID=$!
    sleep 5   # allow the SDK to establish the Live Metrics streaming connection
-   for i in $(seq 1 20); do curl -s http://localhost:8090/order > /dev/null; sleep 0.2; done
+   for i in $(seq 1 20); do curl -s http://localhost:8090/order; echo; sleep 0.2; done
    sleep 6   # allow the SDK to flush the final telemetry batch
    kill $SERVER_PID
    ```
