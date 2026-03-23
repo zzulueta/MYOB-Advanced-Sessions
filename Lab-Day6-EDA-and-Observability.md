@@ -860,7 +860,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    from http.server import HTTPServer, BaseHTTPRequestHandler
    from azure.monitor.opentelemetry import configure_azure_monitor
    from opentelemetry import trace
-   from opentelemetry.trace import SpanKind
+   from opentelemetry.trace import SpanKind, StatusCode
 
    configure_azure_monitor(
        connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
@@ -881,11 +881,12 @@ In this task you run a short Python script directly in Cloud Shell — no contai
                        dep.set_attribute("db.latency_ms", round(latency * 1000))
                    if random.random() < 0.15:
                        span.set_attribute("http.status_code", 500)
-                       span.set_attribute("error", True)
+                       span.set_status(StatusCode.ERROR, "inventory-db timeout")
                        self.send_response(500); self.end_headers()
                        self.wfile.write(json.dumps({"error": "inventory-db timeout", "orderId": order_id}).encode())
                        return
                    span.set_attribute("http.status_code", 200)
+                   span.set_status(StatusCode.OK)
                    self.send_response(200); self.end_headers()
                    self.wfile.write(json.dumps({"orderId": order_id, "status": "accepted"}).encode())
                return
