@@ -391,11 +391,11 @@ lightweight, near-real-time event notification at scale.
 
 ### Create the Event Grid System Topic
 
-6. Navigate to `orderslab6yourname`. In the left menu, select **Events**.
+8. Navigate to `orderslab6yourname`. In the left menu, select **Events**.
 
-7. On the **Events** pane, select **+ Event Subscription**.
+9. On the **Events** pane, select **+ Event Subscription**.
 
-8. Configure the event subscription:
+10. Configure the event subscription:
 
    **Event Subscription Details:**
 
@@ -441,7 +441,7 @@ lightweight, near-real-time event notification at scale.
 
 ### Test the end-to-end event flow
 
-9. Create a test order file on your local machine and upload it to the `orders-drop`
+11. Create a test order file on your local machine and upload it to the `orders-drop`
    container using the portal.
 
    **a.** On your local machine, open any text editor (Notepad, VS Code, etc.) and
@@ -464,7 +464,7 @@ lightweight, near-real-time event notification at scale.
    `orders-drop`. Select **Upload**, browse to your `order-002.json` file, and
    select **Upload**.
 
-10. Within 5–15 seconds, verify that Event Grid delivered a message to the queue.
+12. Within 5–15 seconds, verify that Event Grid delivered a message to the queue.
     In the portal, navigate to `servicebus-lab6-yourname` → **Queues** → `order-intake` →
     **Service Bus Explorer** → **Peek from start**.
 
