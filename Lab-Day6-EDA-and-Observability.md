@@ -514,7 +514,7 @@ lightweight, near-real-time event notification at scale.
 **Azure Logic Apps** is a low-code integration platform for building automated
 workflows. A Logic App **workflow** consists of a **trigger** that starts the run and
 one or more **actions** that execute sequentially (or in parallel, with branching) in
-response. Logic Apps Standard runs as a single-tenant, container-based host in an App
+response. Logic Apps Workflow Service Plan runs as a single-tenant, container-based host in an App
 Service Environment, giving you network isolation and deterministic scaling.
 
 In this task you build a workflow that:
@@ -531,11 +531,13 @@ In this task you build a workflow that:
 
 2. Select **+ Table**, name it `OrderAudit`, and select **OK**.
 
-### Create the Logic App Standard resource
+### Create the Logic App resource
 
 3. In the Azure portal, search for and select **Logic apps**.
 
-4. Select **+ Add** and choose **Logic App (Standard)**.
+4. Select **+ Add**. A **Select a hosting option** screen appears. Select **Workflow Service Plan** (under the Standard column) and select **Select**.
+
+   > **Why Workflow Service Plan?** This is the single-tenant Standard hosting option. It provides a dedicated compute host with VNET integration, which is required for the private networking model in this lab. The Consumption (Multi-tenant) option runs on shared Microsoft infrastructure with no VNET support and is not suitable here.
 
 5. Configure the **Basics** tab:
 
@@ -544,7 +546,7 @@ In this task you build a workflow that:
    | Resource group | **RG-Lab6** |
    | Logic App name | `logicapp-lab6-yourname` |
    | Region | **Australia East** |
-   | Plan type | **Workflow Standard** |
+   | Plan type | **Workflow Service Plan** |
    | Windows Plan | Create new, accept the default name |
    | Pricing plan | **WS1** (smallest, sufficient for lab) |
 
