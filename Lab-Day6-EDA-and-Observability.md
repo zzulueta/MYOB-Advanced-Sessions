@@ -373,8 +373,7 @@ lightweight, near-real-time event notification at scale.
 4. Once deployed, navigate to `stlab6yourname`. In the left menu, under **Data storage**,
    select **Containers**.
 
-5. Select **+ Container**, name it `orders-drop`, set **Public access level** to
-   **Private**, and select **Create**.
+5. Select **+ Container**, name it `orders-drop` and select **Create**.
 
    > **orders-drop** acts as the order landing zone. The front-end application (or
    > a customer-facing API) drops a JSON file here each time an order is submitted.
@@ -397,12 +396,13 @@ lightweight, near-real-time event notification at scale.
    | Name | `order-blob-to-sb` |
    | Event Schema | **Event Grid Schema** |
 
-   **Topic Details** (auto-populated — confirm these values):
+   **Topic Details** (auto-populated — confirm these values, and provide a System Topic Name):
 
    | Setting | Value |
    | --- | --- |
-   | Topic Type | Microsoft.Storage.StorageAccounts |
+   | Topic Type | Storage account |
    | Source Resource | stlab6yourname |
+   | System Topic Name | `eg-stlab6-yourname` |
 
    **Event Types:**
 
