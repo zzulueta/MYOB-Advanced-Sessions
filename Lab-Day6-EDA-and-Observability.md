@@ -843,7 +843,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
 1. Install the Application Insights SDK:
 
    ```bash
-   pip install azure-monitor-opentelemetry==1.6.4 opentelemetry-instrumentation-requests==0.49b0 --quiet
+   pip install azure-monitor-opentelemetry==1.6.4 opentelemetry-instrumentation-requests==0.49b0 --quiet --user
    ```
 
 2. Set the connection string copied in **Task 1, Step 8**:
@@ -887,7 +887,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
            self.send_response(404); self.end_headers()
        def log_message(self, format, *args): pass
 
-   HTTPServer(("0.0.0.0", 8080), OrderHandler).serve_forever()
+   HTTPServer(("0.0.0.0", 8090), OrderHandler).serve_forever()
    EOF
    ```
 
@@ -901,12 +901,15 @@ In this task you run a short Python script directly in Cloud Shell — no contai
 4. Start the server in the background and send 40 requests:
 
    ```bash
+   # Kill any leftover process on port 8090 from a previous run
+   kill $(lsof -t -i:8090) 2>/dev/null; sleep 1
+
    python ~/order-api.py &
    SERVER_PID=$!
    sleep 3   # allow the SDK to initialise
 
    for i in $(seq 1 40); do
-     curl -s http://localhost:8080/order
+     curl -s http://localhost:8090/order
      echo
      sleep 0.2
    done
@@ -945,10 +948,11 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    real-time feed update:
 
    ```bash
+   kill $(lsof -t -i:8090) 2>/dev/null; sleep 1
    python ~/order-api.py &
    SERVER_PID=$!
    sleep 2
-   for i in $(seq 1 20); do curl -s http://localhost:8080/order > /dev/null; sleep 0.2; done
+   for i in $(seq 1 20); do curl -s http://localhost:8090/order > /dev/null; sleep 0.2; done
    kill $SERVER_PID
    ```
 
