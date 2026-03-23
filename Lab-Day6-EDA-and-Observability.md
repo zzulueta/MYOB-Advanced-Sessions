@@ -902,7 +902,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
 
    ```bash
    # Kill any leftover process on port 8090 from a previous run
-   kill $(lsof -t -i:8090) 2>/dev/null; sleep 1
+   fuser -k 8090/tcp 2>/dev/null; sleep 1
 
    python ~/order-api.py &
    SERVER_PID=$!
@@ -948,7 +948,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    real-time feed update:
 
    ```bash
-   kill $(lsof -t -i:8090) 2>/dev/null; sleep 1
+   fuser -k 8090/tcp 2>/dev/null; sleep 1
    python ~/order-api.py &
    SERVER_PID=$!
    sleep 2
