@@ -1047,8 +1047,9 @@ the resulting traces and metrics.
 
    ```bash
    for i in $(seq 1 40); do
-     curl -s "http://${FQDN}:8080/order" | python3 -m json.tool --no-ensure-ascii
-     sleep 0.5
+     curl -s "http://${FQDN}:8080/order"
+     echo
+     sleep 0.2
    done
    ```
 
@@ -1129,7 +1130,7 @@ the resulting traces and metrics.
     to see the tiles update in real time:
 
     ```bash
-    for i in $(seq 1 20); do curl -s "http://${FQDN}:8080/order" > /dev/null; sleep 0.3; done
+    for i in $(seq 1 20); do curl -s "http://${FQDN}:8080/order" > /dev/null; sleep 0.2; done
     ```
 
     > **Live Metrics** uses a persistent streaming connection, not the standard
