@@ -834,223 +834,84 @@ In this task you built a complete, event-driven order processing pipeline entire
 
 ## Task 5: Instrument an Application with Application Insights and Explore Distributed Tracing
 
-**Application Insights** provides end-to-end distributed tracing by injecting a
-correlation context (an `Operation ID`) into every request. Each service that handles
-the request adds a child span — a **dependency telemetry item** — that records how long
-its work took and whether it succeeded. All spans sharing the same Operation ID are
-assembled into an **end-to-end transaction trace**, visualised in the portal as a
-waterfall diagram and in the **Application Map** as a live topology of all services
-and their dependency relationships.
+**Application Insights** provides end-to-end distributed tracing via OpenTelemetry. Each inbound request receives a unique `Operation ID`; every unit of downstream work adds a child **span** sharing that ID. The portal assembles all spans into a waterfall diagram and an **Application Map** topology that reflects actual runtime behaviour.
 
-In this task you deploy a simple Python application to Azure Container Instances (ACI)
-with the Application Insights SDK configured, send traffic through it, and explore
-the resulting traces and metrics.
+In this task you run a short Python script directly in Cloud Shell — no container or registry required — generate traffic to produce telemetry, then query the combined telemetry from the Python app and from the Logic App workflow deployed in Task 4.
 
-### Deploy a sample instrumented application
+### Run an instrumented Python application in Cloud Shell
 
-1. In Cloud Shell, create the application files:
+1. Install the Application Insights SDK:
 
    ```bash
-   mkdir -p ~/lab6-app && cd ~/lab6-app
+   pip install azure-monitor-opentelemetry==1.6.4 opentelemetry-instrumentation-requests==0.49b0 --quiet
    ```
 
-2. Create the application code:
+2. Set the connection string copied in **Task 1, Step 8**:
 
    ```bash
-   cat <<'EOF' > app.py
-   import os
-   import time
-   import random
-   import json
+   export APPLICATIONINSIGHTS_CONNECTION_STRING="<your-connection-string>"
+   ```
+
+3. Create the application script:
+
+   ```bash
+   cat <<'EOF' > ~/order-api.py
+   import os, time, random, json
    from http.server import HTTPServer, BaseHTTPRequestHandler
    from azure.monitor.opentelemetry import configure_azure_monitor
    from opentelemetry import trace
-   from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
-   # Configure the Azure Monitor exporter using the connection string
    configure_azure_monitor(
        connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
    )
-   RequestsInstrumentor().instrument()
-
    tracer = trace.get_tracer(__name__)
 
    class OrderHandler(BaseHTTPRequestHandler):
        def do_GET(self):
-           if self.path == "/health":
-               self.send_response(200)
-               self.end_headers()
-               self.wfile.write(b'{"status":"healthy"}')
-               return
-
            if self.path.startswith("/order"):
                with tracer.start_as_current_span("process-order") as span:
                    order_id = f"ORD-{random.randint(1000, 9999)}"
                    span.set_attribute("order.id", order_id)
-
-                   # Simulate downstream dependency call latency
-                   with tracer.start_as_current_span("query-inventory-db") as dep_span:
+                   with tracer.start_as_current_span("query-inventory-db") as dep:
                        latency = random.uniform(0.02, 0.15)
                        time.sleep(latency)
-                       dep_span.set_attribute("db.latency_ms", round(latency * 1000))
-
-                   # Simulate occasional downstream errors for observability demo
+                       dep.set_attribute("db.latency_ms", round(latency * 1000))
                    if random.random() < 0.15:
                        span.set_attribute("error", True)
-                       self.send_response(500)
-                       self.end_headers()
-                       self.wfile.write(json.dumps({
-                           "error": "inventory-db timeout",
-                           "orderId": order_id
-                       }).encode())
+                       self.send_response(500); self.end_headers()
+                       self.wfile.write(json.dumps({"error": "inventory-db timeout", "orderId": order_id}).encode())
                        return
-
-                   self.send_response(200)
-                   self.end_headers()
-                   self.wfile.write(json.dumps({
-                       "orderId": order_id,
-                       "status": "accepted"
-                   }).encode())
+                   self.send_response(200); self.end_headers()
+                   self.wfile.write(json.dumps({"orderId": order_id, "status": "accepted"}).encode())
                return
+           self.send_response(404); self.end_headers()
+       def log_message(self, format, *args): pass
 
-           self.send_response(404)
-           self.end_headers()
-
-       def log_message(self, format, *args):
-           pass  # suppress default access log — Application Insights captures it
-
-   if __name__ == "__main__":
-       print("Starting order API on port 8080")
-       HTTPServer(("0.0.0.0", 8080), OrderHandler).serve_forever()
+   HTTPServer(("0.0.0.0", 8080), OrderHandler).serve_forever()
    EOF
    ```
 
-   > **What this file does:**
-   >
    > | Section | Purpose |
    > | --- | --- |
-   > | `configure_azure_monitor(...)` | Initialises the Azure Monitor OpenTelemetry exporter, sending all traces and metrics to Application Insights using the connection string injected as an environment variable |
-   > | `RequestsInstrumentor().instrument()` | Auto-instruments any outbound HTTP calls made via the `requests` library — latency and status are captured as dependency telemetry automatically |
-   > | `GET /health` | Returns a simple `{"status":"healthy"}` response — used by the ACI health probe |
-   > | `GET /order` | Opens a parent span `process-order`, generates a random order ID, then opens a child span `query-inventory-db` to simulate a database call with random latency (20–150 ms). Approximately 15% of requests intentionally return HTTP 500 to surface errors in Application Insights for the observability demo |
-   > | `log_message` override | Suppresses the built-in Python HTTP server access log — Application Insights captures request telemetry instead, avoiding duplicate logging |
+   > | `configure_azure_monitor(...)` | Initialises the OpenTelemetry exporter — all traces go to Application Insights |
+   > | `process-order` span | Parent span wrapping the full order request |
+   > | `query-inventory-db` span | Child span simulating a DB call with 20–150 ms random latency |
+   > | 15% HTTP 500 responses | Intentional errors to demonstrate Failures and Search in the portal |
 
-3. Create the `requirements.txt`:
-
-   ```bash
-   cat <<'EOF' > requirements.txt
-   azure-monitor-opentelemetry==1.6.4
-   opentelemetry-instrumentation-requests==0.49b0
-   EOF
-   ```
-
-4. Create the Dockerfile:
+4. Start the server in the background and send 40 requests:
 
    ```bash
-   cat <<'EOF' > Dockerfile
-   FROM python:3.12-slim
-   WORKDIR /app
-   COPY requirements.txt .
-   RUN pip install --no-cache-dir -r requirements.txt
-   COPY app.py .
-   EXPOSE 8080
-   CMD ["python", "app.py"]
-   EOF
-   ```
+   python ~/order-api.py &
+   SERVER_PID=$!
+   sleep 3   # allow the SDK to initialise
 
-5. Build the container image using Azure Container Registry (ACR) Tasks — no local
-   Docker installation required. Note: substitute `acrlab6yourname` with your unique ACR name.
-
-   ```bash
-   # Create a container registry (name must be globally unique, lowercase, no hyphens)
-   az acr create \
-     --resource-group RG-Lab6 \
-     --name acrlab6yourname \
-     --sku Basic
-
-   # Build and push the image to ACR using a cloud build
-   az acr build \
-     --registry acrlab6yourname \
-     --image lab6/order-api:v1 \
-     .
-
-   # Enable the admin user so ACI can authenticate to pull the image
-   az acr update \
-     --name acrlab6yourname \
-     --admin-enabled true
-   ```
-
-   The build runs in the cloud — output streams back to Cloud Shell. Expect 2–3 minutes.
-
-   > **Why enable the admin user?** By default ACR creates a registry with the admin account disabled. The `az container create` command in Step 7 authenticates using the registry name as the username and an auto-generated admin password. The `az acr credential show` command (Step 7) only works after the admin account is enabled. In production, use a managed identity instead — but for this lab the admin account is the simplest option.
-
-   > **What this does:**
-   >
-   > | Command | Purpose |
-   > | --- | --- |
-   > | `az acr create` | Provisions a new Azure Container Registry at the Basic SKU — a private Docker-compatible registry hosted in Azure. All images you push here are private and accessible only to authorised Azure services. |
-   > | `az acr build` | Uploads the current directory (`.`) to ACR as a build context and runs the Docker build entirely in the cloud using **ACR Tasks**. No local Docker engine is required — Cloud Shell has no Docker daemon. The finished image is stored directly in the registry under the tag `lab6/order-api:v1`. |
-   >
-   > **Why ACR instead of Docker Hub?** ACR integrates natively with Azure Container Instances, AKS, and App Service — you can grant an ACI deployment access to a private registry with a single credential parameter, without exposing the image publicly.
-
-6. Set the Application Insights connection string as a shell variable. Use the
-   connection string you copied in **Task 1, Step 8** and paste it below,
-   replacing `<your-connection-string>`:
-
-   ```bash
-   AI_CONN_STR="<your-connection-string>"
-
-   echo "Connection string: $AI_CONN_STR"
-   ```
-
-   The `echo` confirms the value is set. The variable `$AI_CONN_STR` is used
-   automatically in Step 7 when deploying the container — you do not need to
-   paste it again anywhere else.
-
-7. Deploy the instrumented application to Azure Container Instances. Modify the command below with your ACR name and Application Insights connection string variable:
-
-   ```bash
-   # Get the ACR login server and credentials
-   ACR_SERVER=$(az acr show --name acrlab6yourname --query loginServer -o tsv)
-   ACR_PASSWORD=$(az acr credential show --name acrlab6yourname --query "passwords[0].value" -o tsv)
-
-   az container create \
-     --resource-group RG-Lab6 \
-     --name order-api \
-     --image ${ACR_SERVER}/lab6/order-api:v1 \
-     --registry-login-server ${ACR_SERVER} \
-     --registry-username acrlab6yourname \
-     --registry-password "${ACR_PASSWORD}" \
-     --environment-variables APPLICATIONINSIGHTS_CONNECTION_STRING="${AI_CONN_STR}" \
-     --ports 8080 \
-     --dns-name-label order-api-yourname \
-     --os-type Linux \
-     --cpu 1 \
-     --memory 1.5
-   ```
-
-8. Retrieve the public FQDN:
-
-   ```bash
-   FQDN=$(az container show \
-     --resource-group RG-Lab6 \
-     --name order-api \
-     --query ipAddress.fqdn -o tsv)
-
-   echo "App URL: http://${FQDN}:8080/order"
-   ```
-
-### Generate traffic to produce telemetry
-
-9. Send a burst of requests to generate traces and surface the intentional errors
-   (approximately 15% of requests will return HTTP 500):
-
-   ```bash
    for i in $(seq 1 40); do
-     curl -s "http://${FQDN}:8080/order"
+     curl -s http://localhost:8080/order
      echo
      sleep 0.2
    done
+
+   kill $SERVER_PID
    ```
 
    You should see a mix of `"status": "accepted"` (HTTP 200) and
@@ -1058,89 +919,50 @@ the resulting traces and metrics.
 
 ### Explore Application Insights in the portal
 
-10. Navigate to `appinsights-lab6-yourname` in the portal. Select **Overview**. After 1–2
-    minutes of telemetry ingestion you will see live summary tiles:
+5. In the portal, navigate to `appinsights-lab6-yourname` → **Overview**. After 1–2
+   minutes the **Failed requests** and **Server response time** tiles will update.
 
-    | Tile | What it shows |
-    | --- | --- |
-    | **Failed requests** | Count of HTTP 5xx responses over the last hour |
-    | **Server response time** | Average end-to-end latency including all child spans |
-    | **Server requests** | Requests per second |
-    | **Availability** | Results of configured availability tests (none yet — configured in Task 6) |
+6. Select **Investigate → Application Map**. You should see two nodes — the Python
+   process and `query-inventory-db` — connected by an edge showing average latency.
 
-11. Select **Investigate -> Application Map** in the left menu.
+   > **Note:** Application Map may take 5–10 minutes to populate. If it shows
+   > "No data available", continue to Step 7 first and return here later.
 
-    > **Note:** Application Map aggregates telemetry over time to build the topology graph. It typically takes **5–10 minutes** after traffic runs before nodes appear. If the map shows "No data available", move on to **Transaction search** (Step 12) first — it populates within 1–2 minutes and confirms telemetry is flowing. Return here after completing Steps 12–15.
-    >
-    > If Transaction search is also empty, the connection string may not have been injected into the container correctly. Verify with:
-    > ```bash
-    > az container show --resource-group RG-Lab6 --name order-api --query "containers[0].environmentVariables" -o table
-    > ```
-    > The `APPLICATIONINSIGHTS_CONNECTION_STRING` value should match the connection string from Task 1, Step 8. If it is blank or incorrect, delete and recreate the container (repeat Steps 6–7) with the correct value.
+7. Select **Investigate → Search** → **Last 30 minutes** → **View as individual
+   items**. Look for entries with **Result code 500** and select one to open the
+   end-to-end waterfall showing the `process-order` and `query-inventory-db` spans.
 
-    The Application Map renders a real-time topology graph. You should see:
-    - A node for **order-api** (the ACI container)
-    - A node for **query-inventory-db** (the child span representing the simulated
-      database call), connected by an edge labelled with average latency
+   > **How distributed tracing works:** The SDK generates a unique `Operation ID` for
+   > each inbound request and a `Span ID` for each unit of work. Both IDs are injected
+   > into downstream calls via the `traceparent` HTTP header. The portal assembles all
+   > spans sharing the same `Operation ID` into a single waterfall, regardless of which
+   > process emitted them.
 
-    Select a node to see call rate, failure rate, and average duration. This map
-    is auto-generated from distributed trace data — no manual configuration required.
+8. Select **Failures** → **Operations** tab → `GET /order` to see the error rate and
+   breakdown by exception type.
 
-    > **Application Map in a microservices architecture:** As you add more services,
-    > each service that propagates the `traceparent` W3C header (done automatically
-    > by OpenTelemetry SDK instrumentation) appears as a node. The map becomes a
-    > live architecture diagram that reflects actual runtime behaviour, not just
-    > what was documented at design time.
+9. Select **Live Metrics**. While the stream is open, run another burst to watch the
+   real-time feed update:
 
-12. Select **Search** (left menu, under **Investigate**). In the
-    **Time range**, select **Last 30 minutes**.
+   ```bash
+   python ~/order-api.py &
+   SERVER_PID=$!
+   sleep 2
+   for i in $(seq 1 20); do curl -s http://localhost:8080/order > /dev/null; sleep 0.2; done
+   kill $SERVER_PID
+   ```
 
-    The default view groups results by trace. To see individual requests with result
-    codes, select **View as individual items** (button next to the "Traces" tab).
+   > Live Metrics uses a persistent streaming connection rather than the standard
+   > 2-minute telemetry batch cycle — useful for deployment monitoring and incident triage.
 
-    You should see a list of individual request entries. Look for entries with
-    **Result code 500** — select one to open the end-to-end transaction detail.
-    The waterfall view shows:
-    - The top-level `process-order` span (the outer trace)
-    - The child `query-inventory-db` span nested below it
-    - The duration of each span and the point at which the error occurred
+### Query telemetry in Log Analytics with KQL
 
-    > **Distributed tracing — how it works:** The Application Insights / OpenTelemetry
-    > SDK generates a unique `Operation ID` (trace ID) for each inbound request, plus
-    > a `Span ID` for each unit of work. When the application calls a downstream
-    > service, it injects both IDs into the outgoing HTTP header (`traceparent`).
-    > The downstream service reads the header, creates a child span with the same
-    > `Operation ID` but a new `Span ID`, and emits it to Application Insights.
-    > The portal then assembles all spans with the same `Operation ID` into a single
-    > waterfall, regardless of which service or process emitted them.
+The `logs-lab6-yourname` workspace receives telemetry from the Python app and from the
+Logic App workflow connected to Application Insights in Task 4. The following queries
+span both sources.
 
-13. Select **Failures** in the left menu. The **Operations** tab shows which
-    operations are producing the most errors. Select `GET /order` to drill into
-    the failure detail. Select **Drill into → Top 3 exception types** to see
-    the stack trace captured at the point of failure.
-
-14. Select **Performance** in the left menu. The scatter chart plots individual
-    request durations over time. Select **Drill into → Top performing operations**
-    to see dependency breakdown — how much of the end-to-end latency is attributable
-    to the simulated inventory DB call versus the application's own processing time.
-
-15. Select **Live Metrics** in the left menu. This stream shows real-time telemetry
-    with sub-second latency — incoming request rate, outgoing dependency call rate,
-    CPU, memory, and a live feed of failed requests. Send another burst of traffic
-    to see the tiles update in real time:
-
-    ```bash
-    for i in $(seq 1 20); do curl -s "http://${FQDN}:8080/order" > /dev/null; sleep 0.2; done
-    ```
-
-    > **Live Metrics** uses a persistent streaming connection, not the standard
-    > 2-minute telemetry batch cycle. This makes it useful for watching a deployment
-    > roll out in real time or triaging an active incident.
-
-### Query traces in Log Analytics with KQL
-
-16. Navigate to **logs-lab6-yourname** → **Logs** and run the following query to
-    find all failed requests in the last hour:
+10. Navigate to `logs-lab6-yourname` → **Logs**. Find all failed requests from the
+    last hour:
 
     ```kusto
     AppRequests
@@ -1150,7 +972,7 @@ the resulting traces and metrics.
     | order by TimeGenerated desc
     ```
 
-17. Find average latency per operation, broken down by success/failure:
+11. Compare average and P95 latency between successful and failed requests:
 
     ```kusto
     AppRequests
@@ -1163,7 +985,17 @@ the resulting traces and metrics.
     | order by AvgDurationMs desc
     ```
 
-18. Correlate request traces with dependency spans in a single query:
+12. Find Logic App workflow runs recorded by Application Insights (from Task 4):
+
+    ```kusto
+    AppRequests
+    | where TimeGenerated > ago(24h)
+    | where Cloud_RoleName has "logicapp" or Name has "process-order"
+    | project TimeGenerated, Cloud_RoleName, Name, Success, DurationMs
+    | order by TimeGenerated desc
+    ```
+
+13. Correlate request traces with their dependency spans:
 
     ```kusto
     AppRequests
@@ -1177,8 +1009,8 @@ the resulting traces and metrics.
     | order by TimeGenerated desc
     ```
 
-    This join links each HTTP request to the downstream dependency call it triggered,
-    showing in a single row how much of the total latency came from the database call.
+    This links each HTTP request to the `query-inventory-db` span it triggered, showing
+    how much of the total latency came from the simulated database call.
 
 ---
 
