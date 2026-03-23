@@ -890,13 +890,10 @@ In this task you run a short Python script directly in Cloud Shell — no contai
                    span.set_attribute("http.method", "GET")
                    span.set_attribute("http.target", "/order")
                    span.set_attribute("order.id", order_id)
-                   # SpanKind.CLIENT marks this as an outbound dependency call.
-                   # Application Insights maps CLIENT spans to "Dependencies", which
-                   # appear as a separate connected node in the Application Map.
-                   # SpanKind.INTERNAL (the default) stays inside the same node and
-                   # never appears as a second bubble in the map.
-                   with tracer.start_as_current_span("query-inventory-db", kind=SpanKind.CLIENT) as dep:
-                       dep.set_attribute("db.system", "sql")   # tells App Insights this is a DB dependency
+                   # Child span representing a downstream dependency call.
+                   # Application Insights renders this as a dependency node
+                   # in the Application Map and as a child row in the waterfall.
+                   with tracer.start_as_current_span("query-inventory-db") as dep:
                        latency = random.uniform(0.02, 0.15)   # simulate 20-150 ms DB latency
                        time.sleep(latency)
                        dep.set_attribute("db.latency_ms", round(latency * 1000))
@@ -925,8 +922,8 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    > | Section | Purpose |
    > | --- | --- |
    > | `configure_azure_monitor(...)` | Initialises the OpenTelemetry exporter — all traces go to Application Insights |
-   > | `process-order` span | Parent span wrapping the full order request |
-   > | `query-inventory-db` span | Child span simulating a DB call with 20–150 ms random latency |
+   > | `process-order` span | Parent span wrapping the full order request; appears as a Request in the portal |
+   > | `query-inventory-db` span | Child span simulating a DB call with 20–150 ms random latency; visible in the end-to-end waterfall |
    > | 15% HTTP 500 responses | Intentional errors to demonstrate Failures and Search in the portal |
 
 4. Start the server in the background and send 40 requests:
@@ -957,15 +954,11 @@ In this task you run a short Python script directly in Cloud Shell — no contai
 5. In the portal, navigate to `appinsights-lab6-yourname` → **Overview**. After 1–2
    minutes the **Failed requests** and **Server response time** tiles will update.
 
-6. Select **Investigate → Application Map**. You should see two nodes — **order-api**
-   and `query-inventory-db` — connected by an edge showing average latency.
+6. Select **Investigate → Application Map**. You should see the **order-api** node
+   showing the call count, error rate, and average response time.
 
    > **Note:** Application Map may take 5–10 minutes to populate. If it shows
    > "No data available", continue to Step 7 first and return here later.
-   >
-   > **Tip:** If the node label shows `unknown_service` instead of `order-api`, the
-   > `OTEL_SERVICE_NAME` env var was not set before the SDK initialised. Re-run
-   > Steps 3 and 4 — the script sets it automatically via `os.environ.setdefault`.
 
 7. Select **Investigate → Search** → **Last 30 minutes** → **View as individual
    items**. Look for entries with **Result code 500** and select one to open the
