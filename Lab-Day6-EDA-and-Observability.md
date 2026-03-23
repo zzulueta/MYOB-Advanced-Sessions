@@ -1,4 +1,4 @@
----
+﻿---
 lab:
   title: 'Lab Day 6: Event-Driven Architecture & Observability'
   module: 'Advanced Azure Bootcamp – Day 6'
@@ -63,31 +63,31 @@ issues before they reach customers.
 ```
 RG-Lab6 (Resource Group)
 │
-├── Log Analytics Workspace (law-lab6-yourname)
-│   └── Application Insights (ai-lab6-yourname)
+├── Log Analytics Workspace (logs-lab6-yourname)
+│   └── Application Insights (appinsights-lab6-yourname)
 │         ├── Live Metrics Stream
 │         ├── Application Map (distributed trace topology)
 │         └── Transaction Search (end-to-end traces)
 │
-├── Storage Account (stlab6yourname)
+├── Storage Account (orderslab6yourname)
 │   └── Blob Container: orders-drop
 │         └── Event Grid System Topic  ──► routes BlobCreated events
 │
-├── Service Bus Namespace (sb-lab6-yourname)      [Standard SKU]
+├── Service Bus Namespace (servicebus-lab6-yourname)      [Standard SKU]
 │   ├── Queue: order-intake
 │   │     └── receives BlobCreated events from Event Grid
 │   └── Topic: order-notifications
 │         ├── Subscription: invoice-svc
 │         └── Subscription: warehouse-svc
 │
-├── Logic App Standard (la-lab6-yourname)
+├── Logic App Standard (logicapp-lab6-yourname)
 │   └── Workflow: process-order
 │         ├── Trigger:  Service Bus — When a message arrives in order-intake
 │         ├── Action 1: Parse JSON message body
 │         ├── Action 2: Forward to order-notifications Topic (fan-out)
 │         └── Action 3: Insert enriched record into Azure Table Storage
 │
-└── Storage Account – Table (stlab6yourname)
+└── Storage Account – Table (orderslab6yourname)
       └── Table: OrderAudit
 ```
 
@@ -125,7 +125,7 @@ distributed trace correlation.
    | Setting | Value |
    | --- | --- |
    | Resource group | **RG-Lab6** |
-   | Name | `law-lab6-yourname` |
+   | Name | `logs-lab6-yourname` |
    | Region | **Australia East** |
 
 3. Select **Review + Create**, then **Create**. Provisioning takes under a minute.
@@ -141,17 +141,17 @@ distributed trace correlation.
    | Setting | Value |
    | --- | --- |
    | Resource group | **RG-Lab6** |
-   | Name | `ai-lab6-yourname` |
+   | Name | `appinsights-lab6-yourname` |
    | Region | **Australia East** |
-   | Log Analytics Workspace | **law-lab6-yourname** (the workspace you just created) |
+   | Log Analytics Workspace | **logs-lab6-yourname** (the workspace you just created) |
 
 7. Select **Review + Create**, then **Create**.
 
-8. Once deployed, navigate to `ai-lab6-yourname`. On the **Overview** pane, copy the **Connection String**. Store it somewhere accessible — you will paste it into an environment variable in Task 5.
+8. Once deployed, navigate to `appinsights-lab6-yourname`. On the **Overview** pane, copy the **Connection String**. Store it somewhere accessible — you will paste it into an environment variable in Task 5.
 
 ### Explore the Log Analytics query environment
 
-9. Navigate to **law-lab6-yourname**. In the left menu select **Logs**.
+9. Navigate to **logs-lab6-yourname**. In the left menu select **Logs**.
 
    The portal opens in **Simple mode** by default, showing a "Query history" panel.
    To enter KQL, select the **Simple mode** drop-down in the top-right corner of the
@@ -202,7 +202,7 @@ Two core primitives:
    | Setting | Value |
    | --- | --- |
    | Resource group | **RG-Lab6** |
-   | Namespace name | `sb-lab6-yourname` (must be globally unique) |
+   | Namespace name | `servicebus-lab6-yourname` (must be globally unique) |
    | Region | **Australia East** |
    | Pricing tier | **Standard** |
 
@@ -214,7 +214,7 @@ Two core primitives:
 
 ### Create the order-intake Queue
 
-4. Navigate to the `sb-lab6-yourname` namespace. In the left menu, under **Entities**,
+4. Navigate to the `servicebus-lab6-yourname` namespace. In the left menu, under **Entities**,
    select **Queues**.
 
 5. Select **+ Queue** and configure:
@@ -293,7 +293,7 @@ Two core primitives:
 
 ### Retrieve the connection string
 
-10. Navigate back to the `sb-lab6-yourname` namespace. In the left menu, under
+10. Navigate back to the `servicebus-lab6-yourname` namespace. In the left menu, under
     **Settings**, select **Shared access policies**.
 
 11. Select **RootManageSharedAccessKey**.
@@ -304,7 +304,7 @@ Two core primitives:
 
 ### Send and receive a test message using Service Bus Explorer
 
-13. In the portal, navigate to `sb-lab6-yourname` → **Queues** → `order-intake`. Select **Service Bus Explorer**.
+13. In the portal, navigate to `servicebus-lab6-yourname` → **Queues** → `order-intake`. Select **Service Bus Explorer**.
 
 14. Select the **Send message** tab. In the **Message body** field, paste the
     following JSON and select **Send**:
@@ -325,17 +325,17 @@ Two core primitives:
 
 ### Enable diagnostic settings for Service Bus
 
-16. Navigate to `sb-lab6-yourname`. In the left menu, under **Monitoring**, select
+16. Navigate to `servicebus-lab6-yourname`. In the left menu, under **Monitoring**, select
     **Diagnostic settings**.
 
 17. Select **+ Add diagnostic setting** and configure:
 
     | Setting | Value |
     | --- | --- |
-    | Diagnostic setting name | `sb-to-law` |
+    | Diagnostic setting name | `servicebus-to-logs` |
     | Logs – Category groups | Check **allLogs** |
     | Metrics | Check **AllMetrics** |
-    | Destination | **Send to Log Analytics workspace** → `law-lab6-yourname` |
+    | Destination | **Send to Log Analytics workspace** → `logs-lab6-yourname` |
 
     Select **Save**.
 
@@ -363,14 +363,14 @@ lightweight, near-real-time event notification at scale.
    | Setting | Value |
    | --- | --- |
    | Resource group | **RG-Lab6** |
-   | Storage account name | `stlab6yourname` (lowercase, no hyphens, globally unique) |
+   | Storage account name | `orderslab6yourname` (lowercase, no hyphens, globally unique) |
    | Region | **Australia East** |
    | Performance | **Standard** |
    | Redundancy | **Locally-redundant storage (LRS)** |
 
 3. Select **Review + Create**, then **Create**.
 
-4. Once deployed, navigate to `stlab6yourname`. In the left menu, under **Data storage**,
+4. Once deployed, navigate to `orderslab6yourname`. In the left menu, under **Data storage**,
    select **Containers**.
 
 5. Select **+ Container**, name it `orders-drop` and select **Create**.
@@ -383,7 +383,7 @@ lightweight, near-real-time event notification at scale.
 
 ### Create the Event Grid System Topic
 
-6. Navigate to `stlab6yourname`. In the left menu, select **Events**.
+6. Navigate to `orderslab6yourname`. In the left menu, select **Events**.
 
 7. On the **Events** pane, select **+ Event Subscription**.
 
@@ -401,8 +401,8 @@ lightweight, near-real-time event notification at scale.
    | Setting | Value |
    | --- | --- |
    | Topic Type | Storage account |
-   | Source Resource | stlab6yourname |
-   | System Topic Name | `eg-stlab6-yourname` |
+   | Source Resource | orderslab6yourname |
+   | System Topic Name | `events-lab6-yourname` |
 
    **Event Types:**
 
@@ -420,12 +420,12 @@ lightweight, near-real-time event notification at scale.
    | --- | --- |
    | Subscription | your Azure subscription |
    | Resource group | **RG-Lab6** |
-   | Service Bus Namespace | `sb-lab6-yourname` |
+   | Service Bus Namespace | `servicebus-lab6-yourname` |
    | Service Bus Queue | `order-intake` |
 
    Select **Confirm Selection**, then **Create**.
 
-   > **What happens now:** Every time a blob is uploaded to `stlab6yourname`, Event
+   > **What happens now:** Every time a blob is uploaded to `orderslab6yourname`, Event
    > Grid calls the Service Bus data plane and enqueues a `BlobCreated` event message
    > into `order-intake`. The event message is a JSON envelope that includes the blob
    > URL, content length, and etag. The order pipeline can read the blob URL from the
@@ -452,12 +452,12 @@ lightweight, near-real-time event notification at scale.
    }
    ```
 
-   **b.** In the Azure portal, navigate to `stlab6yourname` → **Containers** →
+   **b.** In the Azure portal, navigate to `orderslab6yourname` → **Containers** →
    `orders-drop`. Select **Upload**, browse to your `order-002.json` file, and
    select **Upload**.
 
 10. Within 5–15 seconds, verify that Event Grid delivered a message to the queue.
-    In the portal, navigate to `sb-lab6-yourname` → **Queues** → `order-intake` →
+    In the portal, navigate to `servicebus-lab6-yourname` → **Queues** → `order-intake` →
     **Service Bus Explorer** → **Peek from start**.
 
     You should now see **two messages** in the queue:
@@ -468,7 +468,7 @@ lightweight, near-real-time event notification at scale.
 
     ```json
     {
-      "topic": "/subscriptions/.../resourceGroups/RG-Lab6/providers/Microsoft.Storage/storageAccounts/stlab6yourname",
+      "topic": "/subscriptions/.../resourceGroups/RG-Lab6/providers/Microsoft.Storage/storageAccounts/orderslab6yourname",
       "subject": "/blobServices/default/containers/orders-drop/blobs/order-002.json",
       "eventType": "Microsoft.Storage.BlobCreated",
       "id": "8328ff23-901e-004a-23a3-bad93b060102",
@@ -483,7 +483,7 @@ lightweight, near-real-time event notification at scale.
         "contentLength": 250,
         "blobType": "BlockBlob",
         "accessTier": "Default",
-        "url": "https://stlab6yourname.blob.core.windows.net/orders-drop/order-002.json",
+        "url": "https://orderslab6yourname.blob.core.windows.net/orders-drop/order-002.json",
         "sequencer": "000000000000000000000000000143E20000000001a59957",
         "storageDiagnostics": {
           "batchId": "b57d099a-e006-001d-00a3-ba7708000000"
@@ -526,7 +526,7 @@ In this task you build a workflow that:
 
 ### Create a Storage Table for order auditing
 
-1. Navigate to `stlab6yourname`. In the left menu, under **Data storage**, select
+1. Navigate to `orderslab6yourname`. In the left menu, under **Data storage**, select
    **Tables**.
 
 2. Select **+ Table**, name it `OrderAudit`, and select **OK**.
@@ -542,7 +542,7 @@ In this task you build a workflow that:
    | Setting | Value |
    | --- | --- |
    | Resource group | **RG-Lab6** |
-   | Logic App name | `la-lab6-yourname` |
+   | Logic App name | `logicapp-lab6-yourname` |
    | Region | **Australia East** |
    | Plan type | **Workflow Standard** |
    | Windows Plan | Create new, accept the default name |
@@ -553,7 +553,7 @@ In this task you build a workflow that:
    | Setting | Value |
    | --- | --- |
    | Enable Application Insights | **Yes** |
-   | Application Insights | **ai-lab6-yourname** |
+   | Application Insights | **appinsights-lab6-yourname** |
 
    > Enabling Application Insights here automatically instruments all Logic App
    > workflow runs with distributed trace context. Each run generates a dependency
@@ -563,7 +563,7 @@ In this task you build a workflow that:
 
 ### Create the process-order workflow
 
-8. Once deployed, navigate to `la-lab6-yourname`. In the left menu, under
+8. Once deployed, navigate to `logicapp-lab6-yourname`. In the left menu, under
    **Workflows**, select **Workflows**.
 
 9. Select **+ Add** and configure:
@@ -637,7 +637,7 @@ In this task you build a workflow that:
       "data": {
         "api": "PutBlob",
         "blobType": "BlockBlob",
-        "url": "https://stlab6yourname.blob.core.windows.net/orders-drop/order-002.json",
+        "url": "https://orderslab6yourname.blob.core.windows.net/orders-drop/order-002.json",
         "contentLength": 231
       }
     }
@@ -681,8 +681,8 @@ In this task you build a workflow that:
     | --- | --- |
     | Connection name | `storage-connection` |
     | Authentication | **Access Key** |
-    | Storage Account Name | `stlab6yourname` |
-    | Shared Storage Key | Copy from stlab6yourname → **Access keys** → **key1** |
+    | Storage Account Name | `orderslab6yourname` |
+    | Shared Storage Key | Copy from orderslab6yourname → **Access keys** → **key1** |
 
     Select **Create new**.
 
@@ -742,14 +742,14 @@ In this task you build a workflow that:
     EOF
 
     az storage blob upload \
-      --account-name stlab6yourname \
+      --account-name orderslab6yourname \
       --container-name orders-drop \
       --name order-003.json \
       --file order-003.json \
       --auth-mode login
     ```
 
-26. In the portal, navigate to `la-lab6-yourname` → **Workflows** → `process-order`
+26. In the portal, navigate to `logicapp-lab6-yourname` → **Workflows** → `process-order`
     → **Run history** (left menu).
 
     Within 30–60 seconds a new run should appear with status **Succeeded**.
@@ -762,14 +762,14 @@ In this task you build a workflow that:
 
     ```bash
     az storage entity query \
-      --account-name stlab6yourname \
+      --account-name orderslab6yourname \
       --table-name OrderAudit \
       --auth-mode login
     ```
 
     You should see one or more rows with the `BlobUrl` and `ProcessedAt` fields.
 
-29. Verify the fan-out. In the portal, navigate to `sb-lab6-yourname` →
+29. Verify the fan-out. In the portal, navigate to `servicebus-lab6-yourname` →
     **Topics** → `order-notifications` → **Subscriptions**. Both `invoice-svc`
     and `warehouse-svc` should show **1** as the **Active Message Count**.
 
@@ -915,7 +915,7 @@ the resulting traces and metrics.
 
    ```bash
    AI_CONN_STR=$(az monitor app-insights component show \
-     --app ai-lab6-yourname \
+     --app appinsights-lab6-yourname \
      --resource-group RG-Lab6 \
      --query connectionString -o tsv)
 
@@ -971,7 +971,7 @@ the resulting traces and metrics.
 
 ### Explore Application Insights in the portal
 
-10. Navigate to `ai-lab6-yourname` in the portal. Select **Overview**. After 1–2
+10. Navigate to `appinsights-lab6-yourname` in the portal. Select **Overview**. After 1–2
     minutes of telemetry ingestion you will see live summary tiles:
 
     | Tile | What it shows |
@@ -1040,7 +1040,7 @@ the resulting traces and metrics.
 
 ### Query traces in Log Analytics with KQL
 
-16. Navigate to **law-lab6-yourname** → **Logs** and run the following query to
+16. Navigate to **logs-lab6-yourname** → **Logs** and run the following query to
     find all failed requests in the last hour:
 
     ```kusto
@@ -1092,7 +1092,7 @@ platform health.
 
 ### Create a metric alert for high error rate
 
-1. Navigate to `ai-lab6-yourname`. In the left menu, under **Monitoring**, select
+1. Navigate to `appinsights-lab6-yourname`. In the left menu, under **Monitoring**, select
    **Alerts**.
 
 2. Select **+ Create** → **Alert rule**.
@@ -1143,7 +1143,7 @@ platform health.
 
 ### Create an availability test
 
-7. Navigate to `ai-lab6-yourname` → **Availability** (left menu). Select
+7. Navigate to `appinsights-lab6-yourname` → **Availability** (left menu). Select
    **+ Add Standard test**.
 
 8. Configure:
@@ -1170,7 +1170,7 @@ platform health.
 
 ### Create a Log Analytics alert for Service Bus dead-letter messages
 
-10. Navigate to **law-lab6-yourname** → **Alerts** → **+ Create** → **Alert rule**.
+10. Navigate to **logs-lab6-yourname** → **Alerts** → **+ Create** → **Alert rule**.
 
 11. On the **Condition** tab, select **Custom log search** and enter:
 
@@ -1213,12 +1213,12 @@ platform health.
 
     | Tile type | Resource | Metric / Content |
     | --- | --- | --- |
-    | **Metrics chart** | `ai-lab6-yourname` | Metric: **Failed requests**, Time: Last 24h |
-    | **Metrics chart** | `ai-lab6-yourname` | Metric: **Server response time**, Time: Last 24h |
-    | **Metrics chart** | `sb-lab6-yourname` | Metric: **Active Messages**, Time: Last 24h |
-    | **Metrics chart** | `sb-lab6-yourname` | Metric: **Dead-lettered Messages**, Time: Last 24h |
-    | **Log Analytics query** | `law-lab6-yourname` | Paste the failed requests KQL from Task 5 Step 16 |
-    | **Application Insights Application Map** | `ai-lab6-yourname` | Pin directly from the Application Map blade |
+    | **Metrics chart** | `appinsights-lab6-yourname` | Metric: **Failed requests**, Time: Last 24h |
+    | **Metrics chart** | `appinsights-lab6-yourname` | Metric: **Server response time**, Time: Last 24h |
+    | **Metrics chart** | `servicebus-lab6-yourname` | Metric: **Active Messages**, Time: Last 24h |
+    | **Metrics chart** | `servicebus-lab6-yourname` | Metric: **Dead-lettered Messages**, Time: Last 24h |
+    | **Log Analytics query** | `logs-lab6-yourname` | Paste the failed requests KQL from Task 5 Step 16 |
+    | **Application Insights Application Map** | `appinsights-lab6-yourname` | Pin directly from the Application Map blade |
 
 17. Arrange and resize the tiles to your preference. Select **Save**.
 
@@ -1241,7 +1241,7 @@ platform health.
     EOF
 
     az storage blob upload \
-      --account-name stlab6yourname \
+      --account-name orderslab6yourname \
       --container-name orders-drop \
       --name order-004.json \
       --file order-004.json \
@@ -1255,11 +1255,11 @@ platform health.
 
     | Layer | Where to check | Expected result |
     | --- | --- | --- |
-    | Event Grid delivery | `stlab6yourname` → **Events** → **Metrics** → **Published Events** | Shows 1 event published |
-    | Service Bus message | `sb-lab6-yourname` → `order-intake` → **Metrics** → **Messages** | Incoming message count increases |
-    | Logic App run | `la-lab6-yourname` → Workflows → `process-order` → **Run history** | New Succeeded run for order-004 |
-    | Application Insights | `ai-lab6-yourname` → **Transaction search** | New request traces visible |
-    | Log Analytics | **law-lab6-yourname** → **Logs** → run the KQL from Task 5 Step 16 | New rows with recent timestamps |
+    | Event Grid delivery | `orderslab6yourname` → **Events** → **Metrics** → **Published Events** | Shows 1 event published |
+    | Service Bus message | `servicebus-lab6-yourname` → `order-intake` → **Metrics** → **Messages** | Incoming message count increases |
+    | Logic App run | `logicapp-lab6-yourname` → Workflows → `process-order` → **Run history** | New Succeeded run for order-004 |
+    | Application Insights | `appinsights-lab6-yourname` → **Transaction search** | New request traces visible |
+    | Log Analytics | **logs-lab6-yourname** → **Logs** → run the KQL from Task 5 Step 16 | New rows with recent timestamps |
     | Dashboard | **Lab6 — Platform Health** | Metrics charts reflect recent activity |
 
 ---
