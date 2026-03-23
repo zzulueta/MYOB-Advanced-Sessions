@@ -968,33 +968,9 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    > process emitted them.
 
 8. Select **Investigate** → **Failures** → **Operations** tab → select **process-order**
-   to see the failed request count and the top response codes (500). Select **25 Samples**
+   to see the failed request count and the top response codes (500). Select **XX Samples**
    on the right panel to drill into individual failed traces.
 
-9. Select **Investigate** → **Live Metrics**. Wait until the portal shows **"Connected"**
-   (top of the Live Metrics pane) — this confirms the streaming connection is active.
-   Then, in Cloud Shell, run the burst script:
-
-   ```bash
-   fuser -k 8090/tcp 2>/dev/null; sleep 1
-   python ~/order-api.py &
-   SERVER_PID=$!
-   sleep 5   # allow the SDK to establish the Live Metrics streaming connection
-   for i in $(seq 1 20); do curl -s http://localhost:8090/order; echo; sleep 0.2; done
-   sleep 6   # allow the SDK to flush the final telemetry batch
-   kill $SERVER_PID
-   ```
-
-   You should see incoming requests and failures appear in real time on the Live Metrics charts.
-
-   > **Live Metrics requires the portal to be open first.** It uses a persistent
-   > streaming connection — the SDK only starts sending live data once the portal
-   > page is loaded and shows "Connected". If you run the script before opening
-   > the page, no data will appear. The `sleep 5` gives the SDK time to establish
-   > that connection after the server starts.
-   >
-   > If still nothing appears, close and reopen the Live Metrics blade, wait for
-   > "Connected", then re-run the script.
 
 ### Query telemetry in Log Analytics with KQL
 
