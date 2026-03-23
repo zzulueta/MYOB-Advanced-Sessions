@@ -919,6 +919,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
      sleep 0.2
    done
 
+   sleep 6   # allow the SDK to flush the final telemetry batch
    kill $SERVER_PID
    ```
 
@@ -958,6 +959,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    SERVER_PID=$!
    sleep 2
    for i in $(seq 1 20); do curl -s http://localhost:8090/order > /dev/null; sleep 0.2; done
+   sleep 6   # allow the SDK to flush the final telemetry batch
    kill $SERVER_PID
    ```
 
