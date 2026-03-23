@@ -381,13 +381,11 @@ lightweight, near-real-time event notification at scale.
    > any file lands — triggering the downstream processing pipeline automatically,
    > without the order producer needing to know who the consumers are.
 
-### Retrieve the Storage Account access key
+### Retrieve the Storage Account Connection string
 
 6. In the left menu, under **Security + networking**, select **Access keys**.
 
-7. Select **Show** next to **key1**, then copy the **Key** value and save it somewhere accessible (Notepad, etc.). You will use this in Task 4 when creating the Table Storage connection.
-
-   > **Why Access Key authentication?** The Logic Apps Azure Table Storage connector uses shared key auth to write audit records. This key grants full read/write access to all tables in the storage account, so treat it as a secret — do not commit it to source control.
+7. Select **Show** next to **Connection string** under key1, then copy the **Connection string** value and save it somewhere accessible (Notepad, etc.). You will use this in Task 4 when creating the Table Storage connection.
 
 ### Create the Event Grid System Topic
 
@@ -700,7 +698,7 @@ In this task you build a workflow that:
     | Connection name | `storage-connection` |
     | Authentication | **Access Key** |
     | Storage Account Name | `orderslab6yourname` |
-    | Shared Storage Key | Paste the **key1** value copied in Task 3, Step 7 |
+    | Shared Storage Key | Paste the **Connection string** value copied in Task 3, Step 7 |
 
     Select **Create new**.
 
