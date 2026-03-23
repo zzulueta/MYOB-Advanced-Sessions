@@ -433,12 +433,13 @@ lightweight, near-real-time event notification at scale.
 
 ### Test the end-to-end event flow
 
-9. Open **Azure Cloud Shell** and upload a test order file to the `orders-drop`
-   container:
+9. Create a test order file on your local machine and upload it to the `orders-drop`
+   container using the portal.
 
-   ```bash
-   # Create a sample order JSON file
-   cat <<'EOF' > order-002.json
+   **a.** On your local machine, open any text editor (Notepad, VS Code, etc.) and
+   paste the following JSON, then save the file as `order-002.json`:
+
+   ```json
    {
      "orderId": "ORD-002",
      "customerId": "C-17",
@@ -449,15 +450,11 @@ lightweight, near-real-time event notification at scale.
      "total": 164.96,
      "submittedAt": "2026-03-21T09:15:00Z"
    }
-   EOF
-
-   az storage blob upload \
-     --account-name stlab6yourname \
-     --container-name orders-drop \
-     --name order-002.json \
-     --file order-002.json \
-     --auth-mode login
    ```
+
+   **b.** In the Azure portal, navigate to `stlab6yourname` → **Containers** →
+   `orders-drop`. Select **Upload**, browse to your `order-002.json` file, and
+   select **Upload**.
 
 10. Within 5–15 seconds, verify that Event Grid delivered a message to the queue.
     In the portal, navigate to `sb-lab6-yourname` → **Queues** → `order-intake` →
@@ -471,15 +468,26 @@ lightweight, near-real-time event notification at scale.
 
     ```json
     {
-      "topic": "/subscriptions/.../storageAccounts/stlab6yourname",
+      "topic": "/subscriptions/.../resourceGroups/RG-Lab6/providers/Microsoft.Storage/storageAccounts/stlab6yourname",
       "subject": "/blobServices/default/containers/orders-drop/blobs/order-002.json",
       "eventType": "Microsoft.Storage.BlobCreated",
-      "eventTime": "2026-03-21T09:15:04.123Z",
+      "id": "8328ff23-901e-004a-23a3-bad93b060102",
+      "eventTime": "2026-03-23T09:01:10.7747937Z",
+      "dataVersion": "",
+      "metadataVersion": "1",
       "data": {
         "api": "PutBlob",
+        "requestId": "8328ff23-901e-004a-23a3-bad93b000000",
+        "eTag": "0x8DE88BABA84A18B",
+        "contentType": "application/json",
+        "contentLength": 250,
         "blobType": "BlockBlob",
+        "accessTier": "Default",
         "url": "https://stlab6yourname.blob.core.windows.net/orders-drop/order-002.json",
-        "contentLength": 231
+        "sequencer": "000000000000000000000000000143E20000000001a59957",
+        "storageDiagnostics": {
+          "batchId": "b57d099a-e006-001d-00a3-ba7708000000"
+        }
       }
     }
     ```
