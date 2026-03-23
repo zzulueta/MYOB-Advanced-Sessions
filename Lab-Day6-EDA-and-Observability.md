@@ -546,8 +546,7 @@ In this task you build a workflow that:
    | Resource group | **RG-Lab6** |
    | Logic App name | `logicapp-lab6-yourname` |
    | Region | **Australia East** |
-   | Plan type | **Workflow Service Plan** |
-   | Windows Plan | Create new, accept the default name |
+   | Windows Plan | (New) accept the default name |
    | Pricing plan | **WS1** (smallest, sufficient for lab) |
 
 6. Select the **Monitoring** tab and configure:
@@ -568,7 +567,7 @@ In this task you build a workflow that:
 8. Once deployed, navigate to `logicapp-lab6-yourname`. In the left menu, under
    **Workflows**, select **Workflows**.
 
-9. Select **+ Add** and configure:
+9. Select **+ Create** and configure:
 
    | Setting | Value |
    | --- | --- |
@@ -600,15 +599,15 @@ In this task you build a workflow that:
     | Authentication | **Connection String** |
     | Connection String | paste the Primary Connection String from Task 2 Step 12 |
 
-    Select **Create**.
+    Select **Create new**.
 
 14. Configure the trigger:
 
     | Setting | Value |
     | --- | --- |
     | Queue name | `order-intake` |
-    | Maximum message count | `1` |
-    | Polling interval | `30` seconds |
+
+    Under **Advanced parameters**, select **Show all** to reveal hidden settings, then set **Maximum message batch size** to `1`.
 
     > **Peek-lock vs Receive-and-Delete:** Peek-lock takes a temporary lock on the
     > message without removing it from the queue. The message is only deleted (settled)
