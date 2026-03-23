@@ -967,8 +967,9 @@ In this task you run a short Python script directly in Cloud Shell — no contai
    > spans sharing the same `Operation ID` into a single waterfall, regardless of which
    > process emitted them.
 
-8. Select **Failures** → **Operations** tab → `GET /order` to see the error rate and
-   breakdown by exception type.
+8. Select **Investigate** → **Failures** → **Operations** tab → select **process-order**
+   to see the failed request count and the top response codes (500). Select **25 Samples**
+   on the right panel to drill into individual failed traces.
 
 9. Select **Live Metrics**. While the stream is open, run another burst to watch the
    real-time feed update:
