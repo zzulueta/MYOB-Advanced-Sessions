@@ -668,12 +668,8 @@ In this task you build a workflow that:
 
     | Setting | Value |
     | --- | --- |
-    | Connection | **sb-connection** (reuse the existing connection) |
-    | Entity type | **Topic** |
-    | Topic name | `order-notifications` |
-    | Message body | Use dynamic content to compose a JSON string: |
-
-    In the **Message** field, select the expression editor (the `fx` icon) and enter:
+    | Queue or topic name | `order-notifications` |
+    | Content | select the expression editor (the `fx` icon) and enter below: |
 
     ```
     json(concat('{"event":"OrderReceived","blobUrl":"', body('Parse_JSON')?['data']?['url'], '","processedAt":"', utcNow(), '"}'))
