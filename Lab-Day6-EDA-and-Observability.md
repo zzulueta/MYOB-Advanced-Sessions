@@ -1136,14 +1136,16 @@ platform health.
    > alert fires — catching regional outages that single-region monitoring misses.
 
 8. Observe the **Availability** blade. Because no test is configured it will be
-   empty. Note the **+ Add Standard test** button — this is the entry point you
-   would use once the application is deployed to a public endpoint.
+   empty. In a real deployment, once the test is set up and running, this blade provides a
+   global view of the service's availability, showing which test locations are succeeding.
 
 ### Create a Log Analytics alert for Service Bus dead-letter messages
 
-10. Navigate to **logs-lab6-yourname** → **Alerts** → **+ Create** → **Alert rule**.
+10. Navigate to **logs-lab6-yourname** → **Monitoring** → **Alerts** → **+ Create** → **Alert rule**.
 
-11. On the **Condition** tab, select **Custom log search** and enter:
+11. On the **Condition** tab, click the **Signal name** dropdown. If **Custom log search** does not appear in the list, select **See all signals**, search for `Custom log search`, and select it. 
+
+In the upper right, select **KQL mode**. In the query editor that appears, enter the KQL query below and select **Run query** to validate it returns results:
 
     ```kusto
     AzureMetrics
@@ -1152,18 +1154,17 @@ platform health.
     | where Total > 0
     | summarize DeadLetterCount = sum(Total) by bin(TimeGenerated, 5m), Resource
     ```
+Select **Continue Editing Alert** found at the bottom.
 
-12. Set the alert condition:
+12. Scroll down and set the **Alert logic**:
 
     | Setting | Value |
     | --- | --- |
     | Operator | **Greater than** |
-    | Threshold | `0` |
-    | Check every | **5 minutes** |
-    | Lookback period | **5 minutes** |
+    | Threshold value | `0` |
+    | Frequency of evaluation | **5 minutes** |
 
-13. Assign the `lab6-ops-team` action group. Name the alert
-    `Dead-letter messages detected — Service Bus`. Select **Severity 2 – Warning**.
+13. On the **Actions** tab, Select **Use action groups** and select the `lab6-ops-team` action group. In the **Email subject** enter `Dead-letter messages detected — Service Bus`.
 
     Select **Review + Create** → **Create**.
 
@@ -1173,71 +1174,79 @@ platform health.
     > failures are silent — the order disappears from the queue but was never
     > processed. An alert ensures the team investigates before the backlog grows.
 
+14. On the **Details** tab, set:
+
+    | Setting | Value |
+    | --- | --- |
+    | Severity | **1 – Error** |
+    | Alert rule name | `Service Bus dead-letter messages alert` |
+
+    Select **Review + Create** → **Create**.
+
 ### Build an Azure Dashboard
 
-14. In the Azure portal, select the **Dashboard** icon from the left navigation bar
-    (the grid icon). Select **+ New dashboard** → **Blank dashboard**.
+14. In the Azure portal, select the **Dashboard** icon from the Show portal menu icon (the hamburger icon). Select **+ Create** → **Custom**.
 
 15. Name the dashboard `Lab6 — Platform Health`.
 
-16. Select **+ Add tile** and add the following tiles by searching for each resource:
+16. In the tile gallery on the right, select **Metrics chart** and select **Add**. Repeat until you have **3 Metrics chart tiles** on the canvas. Select **Save** to persist the dashboard layout before configuring each tile.
 
-    | Tile type | Resource | Metric / Content |
-    | --- | --- | --- |
-    | **Metrics chart** | `appinsights-lab6-yourname` | Metric: **Failed requests**, Time: Last 24h |
-    | **Metrics chart** | `appinsights-lab6-yourname` | Metric: **Server response time**, Time: Last 24h |
-    | **Metrics chart** | `servicebus-lab6-yourname` | Metric: **Active Messages**, Time: Last 24h |
-    | **Metrics chart** | `servicebus-lab6-yourname` | Metric: **Dead-lettered Messages**, Time: Last 24h |
-    | **Log Analytics query** | `logs-lab6-yourname` | Paste the failed requests KQL from Task 5 Step 10 |
-    | **Application Insights Application Map** | `appinsights-lab6-yourname` | Pin directly from the Application Map blade |
+17. Select **Edit in Metrics** on the **first tile** (Event Grid — delivery health):
 
-17. Arrange and resize the tiles to your preference. Select **Save**.
+    - **Scope:** Select the Event Grid System Topic created in `events-lab6-yourname`. Then select **Apply**.
+    - For **Metric** select `Published Events` with **Aggregation:** `Sum`
+    - Select **+ Add metric**, then for **Metric** select `Delivery Failed Events` — **Aggregation:** `Sum`
+    - Select the **pencil icon** next to the auto-generated chart title at the top and rename it to `Event Grid — Delivery Health`
 
-18. Select **Share** → **Publish dashboard** to make the dashboard visible to all
-    users in your Azure Active Directory tenant with read access to the resource group.
+    Select **Save to dashboard**.
 
-    > **Shared dashboards** appear under the **Shared dashboards** tab for any portal
-    > user with `Reader` role on the dashboard resource. Combined with Azure RBAC,
-    > this means the operations team sees the platform health view without needing
-    > access to the underlying resource configuration blades.
+18. Select **Edit in Metrics** on the **second tile** (Service Bus — message throughput):
+
+    - **Scope:** `servicebus-lab6-yourname`
+    - **Metric Namespace:** `Service Bus standard metrics`
+    - **Metric:** `Incoming Messages` — **Aggregation:** `Sum`
+    - Select **+ Add metric**: `Count of dead-lettered messages in a Queue/Topic` — **Aggregation:** `Avg`
+    - Select the **pencil icon** next to the chart title and rename it to `Service Bus — Message Throughput`
+
+    Select **Save to dashboard**.
+
+19. Select **Edit in Metrics** on the **third tile** (Logic App — workflow health):
+
+    - **Scope:** `logicapp-lab6-yourname`
+    - **Metric:** `Workflow Runs Completed Count` — **Aggregation:** `Sum`
+    - Select **+ Add metric**, same namespace: `Workflow Runs Failure Rate` — **Aggregation:** `Sum`
+    - Select the **pencil icon** next to the chart title and rename it to `Logic App — Workflow Health`
+
+    Select **Save to dashboard**.
+
+    > The three tiles follow the pipeline from left to right — **Event Grid** publishes an event → **Service Bus** queues the message → **Logic App** processes it. A failure or zero value in any tile pinpoints exactly which stage stalled.
 
 ### Validate the full end-to-end telemetry chain
 
-19. Trigger the complete pipeline one more time and confirm all observability layers captured it:
+21. Trigger the complete pipeline one more time and confirm all observability layers captured it. Create a new order file called order-004.json and upload it in orders-drop container of the orderslab6yourname storage account using the portal. The content of the file should be as below:
 
-    ```bash
-    # Upload a new order blob (triggers Event Grid → Service Bus → Logic App)
-    cat > order-004.json <<'EOF'
-    {"orderId":"ORD-004","customerId":"C-99","total":299.99}
-    EOF
-
-    az storage blob upload \
-      --account-name orderslab6yourname \
-      --container-name orders-drop \
-      --name order-004.json \
-      --file order-004.json \
-      --auth-mode login
-
-    # Send traffic to the order API (generates Application Insights traces)
-    fuser -k 8090/tcp 2>/dev/null; sleep 1
-    python ~/order-api.py &
-    SERVER_PID=$!
-    sleep 3
-    for i in $(seq 1 10); do curl -s http://localhost:8090/order; echo; sleep 1; done
-    sleep 6
-    kill $SERVER_PID
+    ```
+    {
+      "orderId": "ORD-004",
+      "customerId": "C-99",
+      "items": [
+        { "sku": "GADGET-Z", "qty": 1, "unitPrice": 299.99 }
+      ],
+      "total": 299.99,
+      "submittedAt": "2026-03-23T12:00:00Z"
+    }
     ```
 
-20. Confirm all observability layers captured the activity:
+22. Confirm all observability layers captured the activity:
 
     | Layer | Where to check | Expected result |
     | --- | --- | --- |
-    | Event Grid delivery | `orderslab6yourname` → **Events** → **Metrics** → **Published Events** | Shows 1 event published |
-    | Service Bus message | `servicebus-lab6-yourname` → `order-intake` → **Metrics** → **Messages** | Incoming message count increases |
+    | Event Grid delivery | `events-lab6-yourname` → **Monitoring** → **Metrics** → **Published Events** | Shows 1 event published |
+    | Service Bus message | `servicebus-lab6-yourname` → **Entities** → **Queues** → `order-intake` → **Overview** → **Metrics** | Messages count increases |
     | Logic App run | `logicapp-lab6-yourname` → Workflows → `process-order` → **Run history** | New Succeeded run for order-004 |
-    | Application Insights | `appinsights-lab6-yourname` → **Transaction search** | New request traces visible |
-    | Log Analytics | **logs-lab6-yourname** → **Logs** → run the KQL from Task 5 Step 10 | New rows with recent timestamps |
-    | Dashboard | **Lab6 — Platform Health** | Metrics charts reflect recent activity |
+    | Dashboard | **Lab6 — Platform Health** | **Event Grid — Delivery Health** shows 1 Published Event; **Service Bus — Message Throughput** shows 2 Incoming Messages; **Logic App — Workflow Health** shows 1 Completed Run |
+
+    Note: The steps above goes through individual service blades to validate each layer. In a real incident, you would likely start from the dashboard, identify which stage failed, then drill into that service's blade for deeper investigation.
 
 ---
 
@@ -1253,11 +1262,6 @@ and Application Insights all incur ongoing charges. Delete resources promptly af
 3. Copy and paste the resource group name to confirm deletion.
 
 4. Select **Delete**.
-
-   This removes all resources provisioned during the lab — the Service Bus namespace
-   and its queues/topics, the Logic App and its hosting plan, the Container Instance,
-   the Storage Account (blobs and tables), the Event Grid subscription, the Log
-   Analytics workspace, and Application Insights — in a single operation.
 
 ---
 
