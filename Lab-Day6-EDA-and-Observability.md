@@ -1093,13 +1093,12 @@ platform health.
 
    Select **Save**.
 
-6. Back on the alert rule creation page, set:
+6. Go to the **Details** tab. Set:
 
    | Setting | Value |
    | --- | --- |
-   | Alert rule name | `High error rate — order-api` |
    | Severity | **1 – Error** |
-   | Enable upon creation | **Yes** |
+   | Alert rule name | `High error rate — order-api` |
 
    Select **Review + Create** → **Create**.
 
