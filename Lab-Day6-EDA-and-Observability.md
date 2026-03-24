@@ -1062,16 +1062,16 @@ platform health.
 
 2. Select **+ Create** → **Alert rule**.
 
-3. On the **Condition** tab, select **Add condition** and search for
-   `Failed requests`. Select it.
+3. On the **Condition** tab, select **Failed requests** in Signal name. Select it.
 
 4. Configure the signal logic:
 
    | Setting | Value |
    | --- | --- |
-   | Threshold | **Static** |
+   | Threshold type | **Static** |
    | Aggregation type | **Count** |
-   | Operator | **Greater than** |
+   | Value is | **Greater than** |
+   | Unit | **Count** |
    | Threshold value | `0` |
    | Check every | **1 minute** |
    | Lookback period | **5 minutes** |
@@ -1079,23 +1079,19 @@ platform health.
    > A threshold of 0 means the alert fires on any single failure — ideal for the
    > lab because it triggers immediately when you generate errors with the Python
    > script. In production, calibrate the threshold to the expected baseline error
-   > rate — typically expressed as a percentage using a dynamic threshold, not a
-   > fixed count.
+   > rate.
 
-5. Select **Next: Actions**. Select **+ Create action group** and configure:
+5. Select **Next: Actions**. Under **Select actions**, choose **Use quick actions
+   (preview)**. A panel appears on the right — fill in:
 
    | Setting | Value |
    | --- | --- |
    | Action group name | `lab6-ops-team` |
    | Display name | `Lab6-Ops` |
 
-   Under **Notifications**, add:
+   Under **Actions**, tick **Email** and enter your own email address.
 
-   | Notification type | Name | Email |
-   | --- | --- | --- |
-   | Email/SMS message/Push/Voice | `email-on-call` | your own email address |
-
-   Select **Review + Create** → **Create**.
+   Select **Save**.
 
 6. Back on the alert rule creation page, set:
 
