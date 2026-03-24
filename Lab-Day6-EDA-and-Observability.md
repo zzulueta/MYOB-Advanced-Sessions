@@ -1102,7 +1102,7 @@ platform health.
 
    Select **Review + Create** → **Create**.
 
-### Availability tests (concept)
+### Availability tests (READ-ONLY)
 
 7. Navigate to `appinsights-lab6-yourname` → **Availability** (left menu).
 
@@ -1117,15 +1117,20 @@ platform health.
    > `localhost` address. Availability tests require a **publicly accessible** HTTPS
    > endpoint (e.g., an Azure App Service, Container App, or VM with a public IP).
    >
-   > In a real deployment you would configure:
+   > In a real deployment you would select **+ Add Standard test** and configure:
    >
    > | Setting | Example value |
    > | --- | --- |
    > | Test name | `order-api-health` |
    > | URL | `https://order-api.yourdomain.com/health` |
+   > | Enable retries for availability test failures | ✅ (checked) |
+   > | Enable SSL certificate validity | ✅ (checked) |
    > | Test frequency | **5 minutes** |
-   > | Test locations | Australia East, Southeast Asia, East US (≥ 3) |
-   > | Success criteria – HTTP status | `200` |
+   > | Test locations | 5 selected (e.g. Australia East, Southeast Asia, East US) |
+   > | HTTP Request verb | **GET** |
+   > | Success criteria – HTTP response | `200` |
+   > | Test timeout | **120 seconds** |
+   > | Alerts | **Enabled** |
    >
    > If fewer than the configured number of locations succeed, an availability
    > alert fires — catching regional outages that single-region monitoring misses.
