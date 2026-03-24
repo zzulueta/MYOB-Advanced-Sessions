@@ -21,8 +21,8 @@ observable systems on Azure. You will work through the following tasks:
   them to a Service Bus queue
 - Build a Logic App Standard workflow that reacts to Service Bus messages and writes
   enriched order records to Azure Table Storage
-- Instrument a containerised application with the Application Insights SDK and explore
-  distributed traces, dependency maps, and Live Metrics
+- Instrument a Python application with the Application Insights SDK and explore
+  distributed traces, dependency maps, and failure analysis
 - Configure diagnostic settings, metric alerts, and a shared Azure Dashboard for
   operational visibility
 
