@@ -1072,14 +1072,15 @@ platform health.
    | Threshold | **Static** |
    | Aggregation type | **Count** |
    | Operator | **Greater than** |
-   | Threshold value | `3` |
+   | Threshold value | `0` |
    | Check every | **1 minute** |
    | Lookback period | **5 minutes** |
 
-   > A threshold of 3 failures in 5 minutes is deliberately low for the lab so you
-   > can trigger it immediately. In production, calibrate the threshold to the
-   > expected baseline error rate — typically expressed as a percentage using a
-   > dynamic threshold, not a fixed count.
+   > A threshold of 0 means the alert fires on any single failure — ideal for the
+   > lab because it triggers immediately when you generate errors with the Python
+   > script. In production, calibrate the threshold to the expected baseline error
+   > rate — typically expressed as a percentage using a dynamic threshold, not a
+   > fixed count.
 
 5. Select **Next: Actions**. Select **+ Create action group** and configure:
 
