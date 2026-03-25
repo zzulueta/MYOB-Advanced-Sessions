@@ -1046,6 +1046,8 @@ span both sources.
     > window indicates messages are queued but not yet processed — useful for
     > spotting backlog build-up.
 
+    Note: The query may provide an empty result as there is a 30-60 minute delay before the Service Bus metrics appear in Log Analytics for the first time after enabling monitoring.
+
 ---
 
 ## Task 6: Configure Alerts, Dashboards, and Operational Visibility
