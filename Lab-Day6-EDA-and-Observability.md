@@ -978,7 +978,7 @@ The `logs-lab6-yourname` workspace receives telemetry from the Python app and fr
 Logic App workflow connected to Application Insights in Task 4. The following queries
 span both sources.
 
-10. Navigate to `logs-lab6-yourname` → **Logs**. Find all failed requests from the
+9. Navigate to `logs-lab6-yourname` → **Logs**. Find all failed requests from the
     last hour:
 
     ```kusto
@@ -989,7 +989,7 @@ span both sources.
     | order by TimeGenerated desc
     ```
 
-11. Compare average and P95 latency between successful and failed requests:
+10. Compare average and P95 latency between successful and failed requests:
 
     ```kusto
     AppRequests
@@ -1001,7 +1001,7 @@ span both sources.
       by Name, Success
     | order by AvgDurationMs desc
     ```
-12. Correlate request traces with their dependency spans:
+11. Correlate request traces with their dependency spans:
 
     ```kusto
     AppRequests
@@ -1018,7 +1018,7 @@ span both sources.
     This links each HTTP request to the `query-inventory-db` span it triggered, showing
     how much of the total latency came from the simulated database call.
 
-13. Find Logic App workflow runs recorded by Application Insights (from Task 4):
+12. Find Logic App workflow runs recorded by Application Insights (from Task 4):
 
     ```kusto
     AppRequests
@@ -1028,7 +1028,7 @@ span both sources.
     | order by TimeGenerated desc
     ```
 
-14. Query Service Bus message activity from the last hour — incoming messages,
+13. Query Service Bus message activity from the last hour — incoming messages,
     outgoing messages, and any dead-lettered messages across all queues and topics:
 
     ```kusto
@@ -1143,9 +1143,9 @@ platform health.
 
 ### Create a Log Analytics alert for Service Bus dead-letter messages
 
-10. Navigate to **logs-lab6-yourname** → **Monitoring** → **Alerts** → **+ Create** → **Alert rule**.
+9. Navigate to **logs-lab6-yourname** → **Monitoring** → **Alerts** → **+ Create** → **Alert rule**.
 
-11. On the **Condition** tab, click the **Signal name** dropdown. If **Custom log search** does not appear in the list, select **See all signals**, search for `Custom log search`, and select it. 
+10. On the **Condition** tab, click the **Signal name** dropdown. If **Custom log search** does not appear in the list, select **See all signals**, search for `Custom log search`, and select it. 
 
 In the upper right, select **KQL mode**. In the query editor that appears, enter the KQL query below and select **Run query** to validate it returns results:
 
@@ -1158,7 +1158,7 @@ In the upper right, select **KQL mode**. In the query editor that appears, enter
     ```
 Select **Continue Editing Alert** found at the bottom.
 
-12. Scroll down and set the **Alert logic**:
+11. Scroll down and set the **Alert logic**:
 
     | Setting | Value |
     | --- | --- |
@@ -1166,7 +1166,7 @@ Select **Continue Editing Alert** found at the bottom.
     | Threshold value | `0` |
     | Frequency of evaluation | **5 minutes** |
 
-13. On the **Actions** tab, Select **Use action groups** and select the `lab6-ops-team` action group. In the **Email subject** enter `Dead-letter messages detected — Service Bus`.
+12. On the **Actions** tab, Select **Use action groups** and select the `lab6-ops-team` action group. In the **Email subject** enter `Dead-letter messages detected — Service Bus`.
 
     > **Why dead-letter alerts matter:** A dead-letter message is a message that
     > failed processing `Maximum delivery count` times. It means the workflow (Logic
@@ -1174,7 +1174,7 @@ Select **Continue Editing Alert** found at the bottom.
     > failures are silent — the order disappears from the queue but was never
     > processed. An alert ensures the team investigates before the backlog grows.
 
-14. On the **Details** tab, set:
+13. On the **Details** tab, set:
 
     | Setting | Value |
     | --- | --- |
