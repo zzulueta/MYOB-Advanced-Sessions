@@ -724,7 +724,7 @@ In this task you build a workflow that:
 
 ### Add the Complete Message action
 
-22. Add a final action. Search for `Service Bus` and select **Complete the message in a queue**.
+22. Add a final action. Search for `Service Bus Built-in` and select **Complete the message in a queue**.
 
 23. Configure:
 
@@ -840,13 +840,13 @@ In this task you run a short Python script directly in Cloud Shell — no contai
 
 ### Run an instrumented Python application in Cloud Shell
 
-1. Install the Application Insights SDK:
+1. Open the Cloud Shell and install the Application Insights SDK:
 
    ```bash
    pip install azure-monitor-opentelemetry==1.6.4 opentelemetry-instrumentation-requests==0.49b0 --quiet --user
    ```
 
-2. Set the connection string copied in **Task 1, Step 8**:
+2. Set the Application Insights connection string copied in **Task 1, Step 8**:
 
    ```bash
    export APPLICATIONINSIGHTS_CONNECTION_STRING="<your-connection-string>"
@@ -1166,8 +1166,6 @@ Select **Continue Editing Alert** found at the bottom.
 
 13. On the **Actions** tab, Select **Use action groups** and select the `lab6-ops-team` action group. In the **Email subject** enter `Dead-letter messages detected — Service Bus`.
 
-    Select **Review + Create** → **Create**.
-
     > **Why dead-letter alerts matter:** A dead-letter message is a message that
     > failed processing `Maximum delivery count` times. It means the workflow (Logic
     > App) crashed repeatably on a particular message. Without a DLQ alert, these
@@ -1220,6 +1218,8 @@ Select **Continue Editing Alert** found at the bottom.
     Select **Save to dashboard**.
 
     > The three tiles follow the pipeline from left to right — **Event Grid** publishes an event → **Service Bus** queues the message → **Logic App** processes it. A failure or zero value in any tile pinpoints exactly which stage stalled.
+
+20. **Save** the dashboard.
 
 ### Validate the full end-to-end telemetry chain
 
