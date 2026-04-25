@@ -103,7 +103,7 @@ without ordering dependencies.
    | Name | `CoreServicesVnet` |
    | Region | **Australia East** (or your preferred region — keep consistent throughout the lab) |
 
-4. Select the **Addresses** tab. Replace the default IPv4 address space with `10.20.0.0/16`.
+4. Select the **Address space** tab. Replace the default IPv4 address space with `10.20.0.0/16`.
 
 5. Delete the default subnet, then select **+ Add a subnet** for each of the following. Select **Add** after each:
 
@@ -128,7 +128,7 @@ without ordering dependencies.
    | Name | `AppVnet` |
    | Region | **Australia East** |
 
-9. On the **Addresses** tab, replace the address space with `10.60.0.0/16`.
+9. On the **Address space** tab, replace the address space with `10.60.0.0/16`.
 
 10. Delete the default subnet and add the following subnets:
 
