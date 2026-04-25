@@ -425,12 +425,14 @@ Bicep supports native `.bicepparam` files (Bicep 0.18+), which are strongly type
    code parameters.dev.bicepparam
    ```
 
-2. Paste the following, replacing `yourname` with your name to avoid naming conflicts:
+2. Paste the following, replacing `abc` with 1–3 characters of your initials:
+
+   > **Note:** `storageAccountName` must be **11 characters or fewer** (enforced by `@maxLength(11)`). The prefix `stlabdev` is 8 characters, so you have room for up to 3 characters of your initials (e.g. `stlabdevjsm`).
 
    ```bicep
    using 'main.bicep'
 
-   param storageAccountName = 'stlabdevyourname'
+   param storageAccountName = 'stlabdevabc'
    param environment = 'dev'
    param costCenter = 'CC1234'
    param department = 'IT'
@@ -444,12 +446,14 @@ Bicep supports native `.bicepparam` files (Bicep 0.18+), which are strongly type
    code parameters.prod.bicepparam
    ```
 
-4. Paste the following, again replacing `yourname`:
+4. Paste the following, again replacing `abc` with the same 1–3 character initials you used above:
+
+   > **Note:** `stlabprod` is 9 characters, so you have room for up to 2 characters of initials (e.g. `stlabprodjs`).
 
    ```bicep
    using 'main.bicep'
 
-   param storageAccountName = 'stlabprodyourname'
+   param storageAccountName = 'stlabprodabc'
    param environment = 'prod'
    param costCenter = 'CC1234'
    param department = 'IT'
@@ -546,12 +550,14 @@ The `--what-if` flag shows exactly what a deployment *would* change without maki
    code parameters.dev.bicepparam
    ```
 
-2. Change `accessTier` is controlled by the Bicep file, but you can test what-if by updating the `storageAccountName` value to `stlabwhatifyourname` (replacing `yourname` with your name):
+2. Update the `storageAccountName` value to trigger a new resource in the what-if output, replacing `abc` with your 1–3 character initials:
+
+   > **Note:** `stwifdev` is 8 characters, leaving room for up to 3 characters of initials (e.g. `stwifdevjsm`).
 
    ```bicep
    using 'main.bicep'
 
-   param storageAccountName = 'stlabwhatifyourname'
+   param storageAccountName = 'stwifdevabc'
    param environment = 'dev'
    param costCenter = 'CC1234'
    param department = 'IT'
