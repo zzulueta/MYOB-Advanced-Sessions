@@ -601,24 +601,25 @@ Bicep includes a built-in linter that catches common authoring mistakes before d
    code witherrors.bicep
    ```
 
-2. Paste in the following file, which contains four deliberate violations:
+2. Paste in the following file, which contains three deliberate violations:
 
    ```bicep
    // This file contains intentional linting issues for demonstration purposes.
 
-   // Issue 1: No @description decorator on a public parameter (missing-description)
+   // Issue 1: No @description decorator on a public parameter
    param storageAccountName string
 
    // Issue 2: Parameter declared but never used (no-unused-params)
    param unusedParameter string = 'this parameter is never referenced'
 
-   // Issue 3: Hardcoded location instead of resourceGroup().location (no-hardcoded-location)
+   // Note: the no-hardcoded-location rule applies to resource property values,
+   // NOT to parameter defaults — so this does NOT trigger a linter warning.
    param location string = 'australiaeast'
 
-   // Issue 4: Variable declared but never used (no-unused-vars)
+   // Issue 3: Variable declared but never used (no-unused-vars)
    var unusedVariable = 'this variable is never referenced'
 
-   // Issue 5: concat() used instead of string interpolation (prefer-interpolation)
+   // Issue 4: concat() used instead of string interpolation (prefer-interpolation)
    var storageName = concat(storageAccountName, 'suffix')
 
    resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
@@ -647,15 +648,15 @@ Bicep includes a built-in linter that catches common authoring mistakes before d
 2. You should see output similar to:
 
    ```
-   witherrors.bicep(6,7) : Warning no-unused-params: Parameter "unusedParameter" is declared but never used. [https://aka.ms/bicep/linter/no-unused-params]
-   witherrors.bicep(9,7) : Warning no-hardcoded-location: A resource location should not use a hard-coded string or variable value. Please use a parameter value, an expression, or the string 'global'. [https://aka.ms/bicep/linter/no-hardcoded-location]
-   witherrors.bicep(12,5) : Warning no-unused-vars: Variable "unusedVariable" is declared but never used. [https://aka.ms/bicep/linter/no-unused-vars]
-   witherrors.bicep(15,18) : Warning prefer-interpolation: Use string interpolation instead of the concat function. [https://aka.ms/bicep/linter/prefer-interpolation]
+   /home/user/witherrors.bicep(7,7) : Warning no-unused-params: Parameter "unusedParameter" is declared but never used. [https://aka.ms/bicep/linter-diagnostics#no-unused-params]
+   /home/user/witherrors.bicep(13,5) : Warning no-unused-vars: Variable "unusedVariable" is declared but never used. [https://aka.ms/bicep/linter-diagnostics#no-unused-vars]
+   /home/user/witherrors.bicep(16,19) : Warning prefer-interpolation: Use string interpolation instead of the concat function. [https://aka.ms/bicep/linter-diagnostics#prefer-interpolation]
    ```
 
 3. Each line follows the format `file(line,column) : Severity rule-name: message [docs-url]`. Note:
    - **Severity** is `Warning` by default; rules can be elevated to `Error` via a `bicepconfig.json` file.
    - The docs URL links directly to the rule explanation and how to fix it.
+   - Notice that the hardcoded `'australiaeast'` on the `location` *parameter default* did **not** trigger `no-hardcoded-location` — that rule only fires when a hardcoded string is used directly in a *resource property*, not in a parameter default value.
 
 #### Run the linter against main.bicep
 
