@@ -591,21 +591,81 @@ The `--what-if` flag shows exactly what a deployment *would* change without maki
 
 ### Linting with the Bicep CLI
 
-Bicep includes a built-in linter that catches common authoring mistakes before deployment.
+Bicep includes a built-in linter that catches common authoring mistakes before deployment. In this section you first run the linter against a file with intentional issues to see what errors look like, then run it against `main.bicep` to confirm a clean result.
 
-1. Run the linter against your Bicep file:
+#### Create a file with intentional linting issues
+
+1. Open the Cloud Shell editor and create `witherrors.bicep`:
+
+   ```bash
+   code witherrors.bicep
+   ```
+
+2. Paste in the following file, which contains four deliberate violations:
+
+   ```bicep
+   // This file contains intentional linting issues for demonstration purposes.
+
+   // Issue 1: No @description decorator on a public parameter (missing-description)
+   param storageAccountName string
+
+   // Issue 2: Parameter declared but never used (no-unused-params)
+   param unusedParameter string = 'this parameter is never referenced'
+
+   // Issue 3: Hardcoded location instead of resourceGroup().location (no-hardcoded-location)
+   param location string = 'australiaeast'
+
+   // Issue 4: Variable declared but never used (no-unused-vars)
+   var unusedVariable = 'this variable is never referenced'
+
+   // Issue 5: concat() used instead of string interpolation (prefer-interpolation)
+   var storageName = concat(storageAccountName, 'suffix')
+
+   resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+     name: storageName
+     location: location
+     sku: {
+       name: 'Standard_LRS'
+     }
+     kind: 'StorageV2'
+     properties: {
+       accessTier: 'Hot'
+     }
+   }
+   ```
+
+   Use **Ctrl+S** to save, **Ctrl+Q** to close.
+
+#### Run the linter against the file with errors
+
+1. Run:
+
+   ```bash
+   az bicep lint --file witherrors.bicep
+   ```
+
+2. You should see output similar to:
+
+   ```
+   witherrors.bicep(6,7) : Warning no-unused-params: Parameter "unusedParameter" is declared but never used. [https://aka.ms/bicep/linter/no-unused-params]
+   witherrors.bicep(9,7) : Warning no-hardcoded-location: A resource location should not use a hard-coded string or variable value. Please use a parameter value, an expression, or the string 'global'. [https://aka.ms/bicep/linter/no-hardcoded-location]
+   witherrors.bicep(12,5) : Warning no-unused-vars: Variable "unusedVariable" is declared but never used. [https://aka.ms/bicep/linter/no-unused-vars]
+   witherrors.bicep(15,18) : Warning prefer-interpolation: Use string interpolation instead of the concat function. [https://aka.ms/bicep/linter/prefer-interpolation]
+   ```
+
+3. Each line follows the format `file(line,column) : Severity rule-name: message [docs-url]`. Note:
+   - **Severity** is `Warning` by default; rules can be elevated to `Error` via a `bicepconfig.json` file.
+   - The docs URL links directly to the rule explanation and how to fix it.
+
+#### Run the linter against main.bicep
+
+1. Run:
 
    ```bash
    az bicep lint --file main.bicep
    ```
 
-2. Review any warnings or errors. The linter checks for issues such as:
-   - Parameters declared but never used
-   - Hardcoded locations (should use `resourceGroup().location`)
-   - Missing `@description` decorators on public parameters
-   - Use of deprecated API versions
-
-3. Fix any reported issues, then re-run the linter to confirm a clean result.
+2. No output is returned. This means the file passed all linter rules — a clean result exits with code `0` and prints nothing.
 
 ### Review deployment history
 
