@@ -302,6 +302,11 @@ In this task you write a complete Bicep file that deploys a tagged storage accou
    ```bash
    az bicep version
    ```
+   If not found, install Bicep
+
+   ```bash
+   az bicep install
+   ```
 
 5. Confirm you are using the correct subscription:
 
@@ -351,8 +356,9 @@ param location string = resourceGroup().location
 // Use GRS replication for production; LRS is sufficient for non-prod
 var storageSku = environment == 'prod' ? 'Standard_GRS' : 'Standard_LRS'
 
-// Append a deterministic hash so the name is globally unique
-var fullStorageName = '${storageAccountName}${environment}${uniqueString(resourceGroup().id)}'
+// Append a deterministic hash so the name is globally unique, then cap at 24 characters
+// (storageAccountName ≤11 + environment ≤4 + uniqueString 13 = up to 28; take() enforces the limit)
+var fullStorageName = take('${storageAccountName}${environment}${uniqueString(resourceGroup().id)}', 24)
 
 // Centralise tags so every resource shares the same values
 var commonTags = {
