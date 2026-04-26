@@ -489,7 +489,7 @@ an AKS cluster.
       --name lab3-containerapp \
       --query "properties.configuration.ingress.fqdn" -o tsv)
 
-    for i in {1..30}; do curl -s "https://${APP_URL}" -o /dev/null & done
+    for i in {1..3000}; do curl -s "https://${APP_URL}" -o /dev/null & done
     wait
     echo "Done"
     ```
