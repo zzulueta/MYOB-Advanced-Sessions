@@ -368,7 +368,7 @@ and applications that manage their own state in memory.
    live stdout/stderr from the running container. This is the simplest form of
    application observability — no agents required for basic log tailing.
 
-11. Navigate to **Settings → Configuration → General settings**. Because this web app was deployed as a container, there is no runtime stack selector here — that only appears for code-based deployments. Observe the platform settings available: HTTPS only enforcement, minimum TLS version, HTTP version, and Always on. Select the **Stack settings** tab to confirm the container image in use.
+11. Navigate to **Settings → Configuration → General settings**. Because this web app was deployed as a container, there is no runtime stack selector here — that only appears for code-based deployments. Observe the platform settings available: HTTPS only enforcement, minimum TLS version, HTTP version, and Always on.
 
 **Key point:** App Service abstracts the OS and runtime from you, but you retain
 full control over your application code, startup commands, and environment
