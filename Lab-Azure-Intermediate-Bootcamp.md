@@ -112,7 +112,7 @@ Virtual networks are the foundational building block for private networking in A
    | Resource group | `RG-Lab-Integrated-yourname` (replace `yourname` with your initials) |
    | Region | **Australia East** (keep consistent throughout the lab) |
    
-   > **Note**: For EMEA-based students, use **West Europe**. The region must be the same for all resources in this lab.
+   > **Note**: For EMEA-based students, use **France Central**. The region must be the same for all resources in this lab.
 
 4. Select **Review + create**, then **Create**.
 
@@ -484,7 +484,7 @@ In this task you deploy two Windows Server VMs in the AppVnet using Azure CLI. E
      --location australiaeast
    ```
    > Ensure you modify the Resource Group to match the one you created in Task 1.
-   > For EMEA-based students, change the location to `westeurope`.
+   > For EMEA-based students, change the location to `francecentral`.
 
 5. Add a rule to allow HTTP traffic:
 
