@@ -380,7 +380,7 @@ In this task you will:
    ```
 
 3. Switch back to the Azure portal on your local machine. Navigate to your storage
-   account → **Data storage** → **File shares** → **erp-share** → **Browse** → **invoices**.
+   account → **Data storage** → **Classic file shares** → **erp-share** → **Browse** → **invoices**.
 
 4. Confirm `from-vm.txt` appears in the portal. Download and open it. The content written from
    inside the VM is visible immediately.
@@ -572,16 +572,14 @@ The VM has a different public IP, so a connection attempt from it will be blocke
 
 ### Review high-availability and backup configuration
 
-1. In the left menu, select **Overview**. Note the **Server name** FQDN format:
+1. Navigate to the **SQL Server** resource. In the left menu, select **Overview**. Note the **Server name** FQDN format:
    `sqlserver-lab4-yourname.database.windows.net`
 
-2. Navigate to the **SQL Server** resource (`sqlserver-lab4-yourname`). Select
-   **Backups** under **Data management**. Observe **Retention policies**:
+2. Select **Backups** under **Data management**. Observe **Retention policies**:
    - **PITR** Point-in-time restore is enabled by default with a 7-day retention period on the Basic tier
    - **Differential backups** are taken every 24 hours
    - **LTR** Long-term retention is disabled by default (additional cost to enable)
    
-
 3. Navigate back to the **orders-db** database resource. Select **Compute + storage**
    under **Settings** and review the DTU-based pricing model. Note the option to
    scale up to higher service tiers without re-deploying the database.
