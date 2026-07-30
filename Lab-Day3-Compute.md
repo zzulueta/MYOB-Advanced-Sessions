@@ -149,16 +149,6 @@ cost levers available before and after deployment.
     observe on the **Availability + scale -> Size** blade that you can resize a deallocated VM to any SKU
     with no data loss.
 
-    > **Spot VMs** are another cost option — they use spare Azure capacity at up
-    > to a 90 % discount but can be evicted with 30 seconds notice. They suit
-    > fault-tolerant batch jobs, rendering, and CI pipelines but are not
-    > appropriate for stateful or user-facing workloads.
-
-    > **Azure Hybrid Benefit** (shown on the Windows image Basics tab) lets you
-    > bring existing Windows Server or SQL Server licences to Azure, eliminating
-    > the software licence component of the VM cost — which can represent half
-    > the per-hour price for a Windows VM.
-
 12. Restart the VM by selecting **Start** on the **Overview** blade. Leave it
     running — you do not need to connect to it for this lab.
 
