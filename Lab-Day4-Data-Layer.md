@@ -133,7 +133,7 @@ The tier determines the storage cost versus retrieval cost trade-off.
 
 1. In your storage account, select **Containers** under **Data storage**.
 
-2. Select **+ Container** and set:
+2. Select **+ Add Container** and set:
 
    | Setting | Value |
    | --- | --- |
@@ -242,22 +242,24 @@ In this task you will:
 
 ### Step 1: Create the Azure File Share
 
-1. In your storage account (`stlab4yourname`), select **File shares** under **Data storage**.
+1. In your storage account (`stlab4yourname`), select **Classic file shares** under **Data storage**.
 
-2. Select **+ File share** and configure:
+2. Select **+ Classic file share** and configure:
 
    | Setting | Value |
    | --- | --- |
    | Name | `erp-share` |
    | Tier | **Transaction optimized** |
 
-3. Select **Review + Create**, then **Create**.
+3. Select the **Backup** tab. Ensure **Enable backup** is **Off**.
 
-4. Open the `erp-share` file share. Select **+ Add directory** and create two folders:
+4. Select **Review + Create**, then **Create**.
+
+5. Open the `erp-share` file share. Select **+ Add directory** and create two folders:
    - `invoices`
    - `reports`
 
-5. Under **Browse**, select the `invoices` directory, then **Upload** and upload any small file from
+6. Under **Browse**, select the `invoices` directory, then **Upload** and upload any small file from
    your local machine as a test fixture.
 
 ### Step 2: Deploy a Windows Virtual Machine
