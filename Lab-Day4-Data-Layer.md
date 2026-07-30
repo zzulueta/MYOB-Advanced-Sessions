@@ -101,7 +101,7 @@ and review what each service offers.
    | Performance | **Standard** |
    | Redundancy | **Locally-redundant storage (LRS)** |
 
-3. Select the **Advanced** tab and review the following options (leave defaults):
+3. Select the **Security** tab and review the following options (leave defaults):
    - **Require secure transfer for REST API operations** — enforces HTTPS-only access
    - **Allow enabling anonymous access on individual containers** — controls whether anonymous access is possible (disabled by default)
    - **Minimum TLS version** — set to TLS 1.2
