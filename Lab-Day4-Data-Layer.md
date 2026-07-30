@@ -300,7 +300,9 @@ In this task you will:
 
 3. Under the **Native RDP** section, select **Download RDP file**.
 
-4. Open the downloaded `.rdp` file. When prompted, select **Connect**.
+4. Open the downloaded `.rdp` file. When prompted, select allow the remote computer to access your **Clipboard**.
+ 
+   Then select **Connect**.
 
 5. Enter the credentials:
    - **Username:** `azureuser`
@@ -317,7 +319,7 @@ In this task you will:
 
 1. **Keep the RDP session open.** Switch back to the Azure portal on your local machine.
 
-2. Navigate to your storage account → **File shares** → **erp-share**.
+2. Navigate to your storage account → **Classic file shares** → **erp-share**.
 
 3. Select **Connect** from the top toolbar.
 
@@ -341,8 +343,8 @@ In this task you will:
 
 1. Switch back to your RDP session.
 
-2. Open **PowerShell** as Administrator:
-   - Right-click the **Start** button → **Windows PowerShell (Admin)**
+2. Open **Windows PowerShell** as Administrator:
+   - Right-click the **Windows PowerShell** icon → **Run as administrator**
 
 3. Paste and run the copied mount script.
 
