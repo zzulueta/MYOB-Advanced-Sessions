@@ -274,7 +274,8 @@ In this task you will:
    | Virtual machine name | `vm-lab4-erp` |
    | Region | **Australia East** |
    | Availability options | **No infrastructure redundancy required** |
-   | Image | **Windows Server 2022 Datacenter – x64 Gen2** |
+   | Security type | **Standard** |
+   | Image | **Windows Server 2025 Datacenter – x64 Gen2** |
    | Size | **Standard_B2s** (2 vCPUs, 4 GiB RAM) |
    | Administrator username | `azureuser` |
    | Password | A strong password (note this down) |
@@ -285,7 +286,7 @@ In this task you will:
    > Stop (deallocate) and delete the VM as soon as the task is complete to avoid
    > ongoing charges.
 
-3. Select the **Networking** tab. Confirm a new virtual network (`vnet-lab4`) and
+3. Select the **Networking** tab. Confirm a new virtual network and
    subnet are being created automatically. Leave all networking defaults.
 
 4. Select **Review + Create**, then **Create**. Wait for the deployment to complete
