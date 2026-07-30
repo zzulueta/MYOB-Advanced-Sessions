@@ -312,6 +312,18 @@ connectivity.
 
 1. Open **Cloud Shell** (Bash) from the top-right of the portal.
 
+   Confirm you are using the correct subscription:
+
+   ```bash
+   az account show --query "{name:name, id:id}" -o table
+   ```
+
+   If not, set it:
+
+   ```bash
+   az account set --subscription "<your-subscription-id>"
+   ```
+
 2. Run the following commands to deploy all three VMs. 
 
    Do the following before running the script:
