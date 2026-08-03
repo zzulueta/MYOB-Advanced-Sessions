@@ -1025,27 +1025,6 @@ span both sources.
     | project TimeGenerated, AppRoleName, Name, Success, DurationMs
     | order by TimeGenerated desc
     ```
-
-13. Query Service Bus message activity from the last hour — incoming messages,
-    outgoing messages, and any dead-lettered messages across all queues and topics:
-
-    ```kusto
-    AzureMetrics
-    | where TimeGenerated > ago(1h)
-    | where ResourceProvider == "MICROSOFT.SERVICEBUS"
-    | where MetricName in ("IncomingMessages", "OutgoingMessages", "DeadletteredMessages")
-    | summarize Total = sum(Total) by bin(TimeGenerated, 5m), MetricName
-    | order by TimeGenerated desc
-    ```
-
-    > Each 5-minute bucket shows how many messages arrived (`IncomingMessages`),
-    > were consumed (`OutgoingMessages`), and failed into the dead-letter queue
-    > (`DeadletteredMessages`). A gap between incoming and outgoing in the same
-    > window indicates messages are queued but not yet processed — useful for
-    > spotting backlog build-up.
-
-    Note: The query may provide an empty result as there is a 30-60 minute delay before the Service Bus metrics appear in Log Analytics for the first time after enabling monitoring.
-
 ---
 
 ## Task 6: Configure Alerts, Dashboards, and Operational Visibility
