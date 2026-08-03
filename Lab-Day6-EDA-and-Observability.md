@@ -1178,13 +1178,13 @@ Select **Continue Editing Alert** found at the bottom.
 
     Select **Save to dashboard**.
 
-18. Select **Edit in Metrics** on the **second tile** (Service Bus — message throughput):
+18. Select **Edit in Metrics** on the **second tile** (Service Bus Messages):
 
     - **Scope:** `servicebus-lab6-yourname`
     - **Metric Namespace:** `Service Bus standard metrics`
     - **Metric:** `Count of active messages in a Queue/Topic` — **Aggregation:** `Avg`
-    - Select **+ Add metric**: `Count of dead-lettered messages in a Queue/Topic` — **Aggregation:** `Sum`
-    - Select the **pencil icon** next to the chart title and rename it to `Service Bus — Message Throughput`
+    - Select **+ Add metric**: `Count of dead-lettered messages in a Queue/Topic` — **Aggregation:** `Avg`
+    - Select the **pencil icon** next to the chart title and rename it to `Service Bus Messages`
 
     Select **Save to dashboard**.
 
@@ -1222,9 +1222,9 @@ Select **Continue Editing Alert** found at the bottom.
     | Layer | Where to check | Expected result |
     | --- | --- | --- |
     | Event Grid delivery | `events-lab6-yourname` → **Monitoring** → **Metrics** → **Published Events** | Shows 1 event published |
-    | Service Bus message | `servicebus-lab6-yourname` → **Entities** → **Queues** → `order-intake` → **Overview** → **Metrics** | Messages count increases |
+    | Service Bus message | `servicebus-lab6-yourname` → **Overview** → **Monitoring** → **Messages** | Messages count increases |
     | Logic App run | `logicapp-lab6-yourname` → Workflows → `process-order` → **Run history** | New Succeeded run for order-004 |
-    | Dashboard | **Lab6 — Platform Health** | **Event Grid — Delivery Health** shows 1 Published Event; **Service Bus — Message Throughput** shows 2 Incoming Messages; **Logic App — Workflow Health** shows 1 Completed Run |
+    | Dashboard | **Lab6 — Platform Health** | **Event Grid — Delivery Health** shows 1 Published Event; **Service Bus Messages** shows 2 Active Messages; **Logic App — Workflow Health** shows 1 Completed Run |
 
     Note: The steps above goes through individual service blades to validate each layer. In a real incident, you would likely start from the dashboard, identify which stage failed, then drill into that service's blade for deeper investigation.
 
