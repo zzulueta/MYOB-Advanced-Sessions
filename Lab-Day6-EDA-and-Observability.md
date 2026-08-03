@@ -1182,8 +1182,8 @@ Select **Continue Editing Alert** found at the bottom.
 
     - **Scope:** `servicebus-lab6-yourname`
     - **Metric Namespace:** `Service Bus standard metrics`
-    - **Metric:** `Incoming Messages` — **Aggregation:** `Sum`
-    - Select **+ Add metric**: `Count of dead-lettered messages in a Queue/Topic` — **Aggregation:** `Avg`
+    - **Metric:** `Completed Messages` — **Aggregation:** `Sum`
+    - Select **+ Add metric**: `Count of dead-lettered messages in a Queue/Topic` — **Aggregation:** `Sum`
     - Select the **pencil icon** next to the chart title and rename it to `Service Bus — Message Throughput`
 
     Select **Save to dashboard**.
