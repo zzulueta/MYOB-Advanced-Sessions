@@ -893,7 +893,7 @@ In this task you run a short Python script directly in Cloud Shell — no contai
                    with tracer.start_as_current_span("query-inventory-db") as dep:
                        latency = random.uniform(0.02, 0.15)   # simulate 20-150 ms DB latency
                        time.sleep(latency)
-                       dep.set_attribute("db.latency_ms", round(latency * 1000))
+                       dep.set_attribute("db_latency_ms", round(latency * 1000))
                    # Simulate a 15% error rate to demonstrate the Failures blade.
                    if random.random() < 0.15:
                        span.set_attribute("http.status_code", 500)
