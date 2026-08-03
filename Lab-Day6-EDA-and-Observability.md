@@ -1232,8 +1232,7 @@ Select **Continue Editing Alert** found at the bottom.
 
 ## Cleanup
 
-**Note:** Azure Service Bus (Standard), Logic Apps (Standard), Container Instances,
-and Application Insights all incur ongoing charges. Delete resources promptly after the lab.
+**Note:** Azure Service Bus (Standard), Logic Apps (Standard) and Application Insights all incur ongoing charges. Delete resources promptly after the lab.
 
 1. In the portal, navigate to **RG-Lab6**.
 
