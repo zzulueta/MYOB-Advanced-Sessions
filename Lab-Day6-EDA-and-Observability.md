@@ -299,9 +299,7 @@ Two core primitives:
 
 11. Select **RootManageSharedAccessKey**.
 
-12. Copy the **Primary Connection String**. You will use this in Task 3 when
-    configuring the Event Grid subscription, and in Cloud Shell when sending test
-    messages.
+12. Copy the **Primary Connection String**. You will use this in Task 4 when configuring the Service Bus connection for the Logic App.
 
 ### Send and receive a test message using Service Bus Explorer
 
@@ -374,7 +372,7 @@ lightweight, near-real-time event notification at scale.
 4. Once deployed, navigate to `orderslab6yourname`. In the left menu, under **Data storage**,
    select **Containers**.
 
-5. Select **+ Container**, name it `orders-drop` and select **Create**.
+5. Select **+ Add container**, name it `orders-drop` and select **Create**.
 
    > **orders-drop** acts as the order landing zone. The front-end application (or
    > a customer-facing API) drops a JSON file here each time an order is submitted.
@@ -386,7 +384,7 @@ lightweight, near-real-time event notification at scale.
 
 6. In the left menu, under **Security + networking**, select **Access keys**.
 
-7. Select **Show** next to **Connection string** under key1, then copy the **Connection string** value and save it somewhere accessible (Notepad, etc.). You will use this in Task 4 when creating the Table Storage connection.
+7. Select **Show** next to **Connection string** under key1, then copy the **Connection string** value and save it somewhere accessible (Notepad, etc.). You will use this in Task 4 when creating the Table Storage connection for the Logic App.
 
 ### Create the Event Grid System Topic
 
@@ -543,7 +541,7 @@ In this task you build a workflow that:
 
 3. In the Azure portal, search for and select **Logic apps**.
 
-4. Select **+ Add**. A **Select a hosting option** screen appears. Select **Workflow Service Plan** (under the Standard column) and select **Select**.
+4. Select **+ Create**. A **Select a hosting option** screen appears. Select **Workflow Service Plan** (under the Standard column) and select **Select**.
 
    > **Why Workflow Service Plan?** This is the single-tenant Standard hosting option. It provides a dedicated compute host with VNET integration, which is required for the private networking model in this lab. The Consumption (Multi-tenant) option runs on shared Microsoft infrastructure with no VNET support and is not suitable here.
 
@@ -637,7 +635,7 @@ In this task you build a workflow that:
     | Content | Select the lightning-bolt icon and choose **Content** from the trigger's dynamic content |
     | Schema | Select **Use sample payload to generate schema** and paste: |
 
-    > **Where does this sample come from?** This is the actual Event Grid message body delivered to the `order-intake` queue, which you can inspect in Service Bus Explorer (Task 3, Step 10). Paste your own message from there, or use the sample below.
+    > **Where does this sample come from?** This is the actual Event Grid message body delivered to the `order-intake` queue, which you can inspect in Service Bus Explorer (Task 3, Step 12) Paste your own message from there, or use the sample below.
 
     ```json
     {
@@ -731,7 +729,7 @@ In this task you build a workflow that:
     | Setting | Value |
     | --- | --- |
     | Queue name | `order-intake` |
-    | Lock token | Select the **Lock token** field, then from the dynamic content picker select **Lock Token** (listed under the Service Bus trigger) |
+    | Lock token | Select the **Lock token** field, then from the dynamic content picker (lightning bolt icon) select **Lock Token** (listed under the Service Bus trigger) |
 
     > This action settles the message. Once completed, Service Bus permanently removes
     > it from the queue. If this action is never reached (because a previous action
