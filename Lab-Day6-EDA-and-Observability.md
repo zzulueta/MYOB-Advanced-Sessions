@@ -466,7 +466,7 @@ lightweight, near-real-time event notification at scale.
     **Service Bus Explorer** → **Peek from start**.
 
     You should now see **two messages** in the queue:
-    - The test message sent manually in Task 2 (Step 15)
+    - The test message sent manually in Task 2 (Step 14)
     - The `BlobCreated` event just delivered by Event Grid
 
     Inspect the Event Grid message body. It will be a JSON envelope similar to:
