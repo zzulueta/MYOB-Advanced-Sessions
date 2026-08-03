@@ -1124,7 +1124,7 @@ platform health.
 
 10. On the **Condition** tab, click the **Signal name** dropdown. If **Custom log search** does not appear in the list, select **See all signals**, search for `Custom log search`, and select it. 
 
-In the upper right, select **KQL mode**. In the query editor that appears, enter the KQL query below and select **Run query** to validate it returns results:
+    In the upper right, select **KQL mode**. In the query editor that appears, enter the KQL query below and select **Run query** to validate it returns results:
 
     ```kusto
     AzureMetrics
@@ -1133,6 +1133,7 @@ In the upper right, select **KQL mode**. In the query editor that appears, enter
     | where Total > 0
     | summarize DeadLetterCount = sum(Total) by bin(TimeGenerated, 5m), Resource
     ```
+
 Select **Continue Editing Alert** found at the bottom.
 
 11. Scroll down and set the **Alert logic**:
