@@ -349,7 +349,7 @@ connectivity.
      --public-ip-address "" \
      --admin-username azureuser \
      --admin-password <password> \
-     --size Standard_B1s \
+     --size Standard_B2pts_v2 \
      --no-wait
 
    # vm0 in BackendSubnet1
@@ -359,9 +359,11 @@ connectivity.
      --image Ubuntu2204 \
      --vnet-name AppVnet \
      --subnet BackendSubnet1 \
+     --public-ip-address "" \
      --nsg app-nsg \
      --admin-username azureuser \
      --admin-password <password> \
+     --size Standard_B2pts_v2 \
      --custom-data '#!/bin/bash
    apt-get update && apt-get install -y nginx
    echo "<h1>Hello World from az104-06-vm0</h1>" > /var/www/html/index.html
@@ -379,8 +381,10 @@ connectivity.
      --vnet-name AppVnet \
      --subnet BackendSubnet2 \
      --nsg app-nsg \
+     --public-ip-address "" \
      --admin-username azureuser \
      --admin-password <password> \
+     --size Standard_B2pts_v2 \
      --custom-data '#!/bin/bash
    apt-get update && apt-get install -y nginx
    echo "<h1>Hello World from az104-06-vm1</h1>" > /var/www/html/index.html
