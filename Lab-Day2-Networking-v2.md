@@ -349,7 +349,7 @@ connectivity.
      --public-ip-address "" \
      --admin-username azureuser \
      --admin-password <password> \
-     --size Standard_B2pts_v2 \
+     --size Standard_B2ls_v2 \
      --no-wait
 
    # vm0 in BackendSubnet1
@@ -363,7 +363,7 @@ connectivity.
      --nsg app-nsg \
      --admin-username azureuser \
      --admin-password <password> \
-     --size Standard_B2pts_v2 \
+     --size Standard_B2ls_v2 \
      --custom-data '#!/bin/bash
    apt-get update && apt-get install -y nginx
    echo "<h1>Hello World from az104-06-vm0</h1>" > /var/www/html/index.html
@@ -384,7 +384,7 @@ connectivity.
      --public-ip-address "" \
      --admin-username azureuser \
      --admin-password <password> \
-     --size Standard_B2pts_v2 \
+     --size Standard_B2ls_v2 \
      --custom-data '#!/bin/bash
    apt-get update && apt-get install -y nginx
    echo "<h1>Hello World from az104-06-vm1</h1>" > /var/www/html/index.html
