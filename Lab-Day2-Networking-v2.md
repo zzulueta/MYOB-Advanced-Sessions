@@ -338,7 +338,9 @@ connectivity.
      --resource-group RG-Lab2 --nsg-name app-nsg \
      --name AllowHTTP --priority 100 \
      --protocol Tcp --destination-port-ranges 80 --access Allow
+   ```
 
+   ```bash
    # CoreServicesVM in SharedServicesSubnet (used for peering verification)
    az vm create \
      --resource-group RG-Lab2 \
@@ -351,7 +353,35 @@ connectivity.
      --admin-password <password> \
      --size Standard_B2ls_v2 \
      --no-wait
+   ```
+   ```bash
+   # Create init-vm0.sh
+   cat > init-vm0.sh << 'EOF'
+#!/bin/bash
+apt-get update
+apt-get install -y nginx
+echo "<h1>Hello World from az104-06-vm0</h1>" > /var/www/html/index.html
+mkdir -p /var/www/html/image /var/www/html/video
+echo "<h1>Image server - vm0</h1>" > /var/www/html/image/index.html
+echo "<h1>Video server - vm0</h1>" > /var/www/html/video/index.html
+systemctl enable nginx
+systemctl start nginx
+EOF
 
+   # Create init-vm1.sh
+   cat > init-vm1.sh << 'EOF'
+#!/bin/bash
+apt-get update
+apt-get install -y nginx
+echo "<h1>Hello World from az104-06-vm1</h1>" > /var/www/html/index.html
+mkdir -p /var/www/html/image /var/www/html/video
+echo "<h1>Image server - vm1</h1>" > /var/www/html/image/index.html
+echo "<h1>Video server - vm1</h1>" > /var/www/html/video/index.html
+systemctl enable nginx
+systemctl start nginx
+EOF
+   ```
+   ```bash
    # vm0 in BackendSubnet1
    az vm create \
      --resource-group RG-Lab2 \
@@ -364,13 +394,7 @@ connectivity.
      --admin-username azureuser \
      --admin-password <password> \
      --size Standard_B2ls_v2 \
-     --custom-data '#!/bin/bash
-   apt-get update && apt-get install -y nginx
-   echo "<h1>Hello World from az104-06-vm0</h1>" > /var/www/html/index.html
-   mkdir -p /var/www/html/image /var/www/html/video
-   echo "<h1>Image server - vm0</h1>" > /var/www/html/image/index.html
-   echo "<h1>Video server - vm0</h1>" > /var/www/html/video/index.html
-   systemctl enable nginx && systemctl start nginx' \
+     --custom-data init-vm0.sh \
      --no-wait
 
    # vm1 in BackendSubnet2
@@ -385,13 +409,7 @@ connectivity.
      --admin-username azureuser \
      --admin-password <password> \
      --size Standard_B2ls_v2 \
-     --custom-data '#!/bin/bash
-   apt-get update && apt-get install -y nginx
-   echo "<h1>Hello World from az104-06-vm1</h1>" > /var/www/html/index.html
-   mkdir -p /var/www/html/image /var/www/html/video
-   echo "<h1>Image server - vm1</h1>" > /var/www/html/image/index.html
-   echo "<h1>Video server - vm1</h1>" > /var/www/html/video/index.html
-   systemctl enable nginx && systemctl start nginx' \
+     --custom-data init-vm1.sh \
      --no-wait
    ```
 
