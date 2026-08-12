@@ -97,7 +97,7 @@ and review what each service offers.
    | Resource group | **RG-Lab4** |
    | Storage account name | `stlab4yourname` (replace *yourname* to keep it globally unique) |
    | Region | **Australia East** |
-   | Primary service | **Azure Blob Storage or Azure Data Lake Storage Gen 2** |
+   | Preferred Storage Type | **Azure Blob Storage or Azure Data Lake Storage Gen 2** |
    | Performance | **Standard** |
    | Redundancy | **Locally-redundant storage (LRS)** |
 
@@ -216,7 +216,7 @@ application code changes.
 
 ---
 
-## Task 4: Deploy a Windows VM, Connect via RDP, and Map an Azure File Share
+## Task 4: Deploy a Windows VM, Connect, and Map an Azure File Share
 
 Azure Files provides fully managed SMB and NFS file shares hosted inside a standard
 Azure Storage account. Unlike Blob Storage — which exposes objects via HTTP/HTTPS
@@ -292,7 +292,7 @@ In this task you will:
 4. Select **Review + Create**, then **Create**. Wait for the deployment to complete
    (typically 2–3 minutes).
 
-### Step 3: Connect to the VM via RDP
+### Step 3: Connect to the VM
 
 1. Navigate to the `vm-lab4-erp` virtual machine resource.
 
@@ -314,6 +314,12 @@ In this task you will:
    > If RDP is blocked by your corporate firewall, use the **Bastion** option in the
    > Connect blade instead — Azure Bastion provides browser-based RDP over HTTPS
    > on port 443 with no public IP required on the VM.
+
+7. If RDP is not working, we connect to the VM using **Azure Bastion**:
+   - In the Azure portal, navigate to the `vm-lab4-erp` virtual machine resource.
+   - Select **Connect** → **Bastion** from the top toolbar.
+   - Enter your Username and Password, then select **Connect**.
+   - A browser-based Bastion session will open in a new tab.
 
 ### Step 4: Retrieve the Azure Files Mount Script
 
@@ -465,7 +471,7 @@ built-in Query Editor.
 
 2. In the left menu, select **Query editor (preview)**.
 
-3. Log in using `sqladmin` and the password you set.
+3. Select SQL authentication then log in using `sqladmin` and the password you set.
 
 4. Select **New query**. In the query window, create the orders table:
 
